@@ -1,33 +1,34 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
 
-// Storage config
+const uploadDir = "uploads";
+
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir);
+}
+
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, "uploads/");
+        cb(null, uploadDir);
     },
 
     filename: (req, file, cb) => {
-        cb(
-            null,
-            Date.now() + path.extname(file.originalname)
-        );
+        cb(null, Date.now() + path.extname(file.originalname));
     }
 });
 
-// File filter
 const fileFilter = (req, file, cb) => {
     const allowedFileTypes = /pdf|doc|docx/;
-
     const extname = allowedFileTypes.test(
         path.extname(file.originalname).toLowerCase()
     );
 
     if (extname) {
         return cb(null, true);
-    } else {
-        cb("Only PDF, DOC, DOCX files are allowed");
     }
+
+    cb(new Error("Only PDF, DOC, DOCX files are allowed"));
 };
 
 const upload = multer({

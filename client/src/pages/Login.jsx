@@ -33,7 +33,10 @@ function Login() {
 
             navigate("/dashboard");
         } catch (error) {
-            setError(error.response?.data?.message || "Login failed");
+            setError(
+                error.response?.data?.message ||
+                "Server is waking up. Please try again."
+            );
         } finally {
             setLoading(false);
         }
@@ -133,6 +136,11 @@ function Login() {
                         <button className="btn-primary auth-submit" type="submit" disabled={loading}>
                             {loading ? "Logging in..." : "Login to Dashboard"}
                         </button>
+                        {loading && (
+                            <p className="helper-text">
+                                Server may take a few seconds to wake up.
+                            </p>
+                        )}
                     </form>
 
                     <p className="auth-switch">

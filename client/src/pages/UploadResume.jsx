@@ -49,7 +49,8 @@ function UploadResume() {
 
         } catch (error) {
             setError(
-                error.response?.data?.message || "Resume upload failed"
+                error.response?.data?.message ||
+        "Analysis failed. Please try again."
             );
         } finally {
             setLoading(false);
@@ -95,6 +96,11 @@ function UploadResume() {
         "Analyze Resume"
     )}
 </button>
+{loading && (
+    <p className="helper-text">
+        Analysis may take a few seconds.
+    </p>
+)}
                 </form>
             </section>
         </main>

@@ -34,7 +34,10 @@ function Register() {
 
             navigate("/dashboard");
         } catch (error) {
-            setError(error.response?.data?.message || "Registration failed");
+            setError(
+    error.response?.data?.message ||
+    "Server is waking up. Please try again."
+);
         } finally {
             setLoading(false);
         }
@@ -146,6 +149,9 @@ function Register() {
                         <button className="btn-primary auth-submit" type="submit" disabled={loading}>
                             {loading ? "Creating account..." : "Create Free Account"}
                         </button>
+                        <p className="helper-text">
+                            Server may take a few seconds to wake up.
+                        </p>
                     </form>
 
                     <p className="auth-switch">
