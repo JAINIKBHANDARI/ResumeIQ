@@ -7,6 +7,11 @@ const resumeSchema = new mongoose.Schema(
             required: true
         },
 
+        originalName: {
+            type: String,
+            required: true
+        },
+
         filepath: {
             type: String,
             required: true
@@ -41,6 +46,12 @@ const resumeSchema = new mongoose.Schema(
             default: []
         },
 
+        actionPlan: {
+            priorityFixes: { type: [String], default: [] },
+            keywordSuggestions: { type: [String], default: [] },
+            projectImprovements: { type: [String], default: [] },
+            estimatedImprovement: { type: String, default: "" }
+        },
         interviewQuestions: {
             technical: {
                 type: [String],

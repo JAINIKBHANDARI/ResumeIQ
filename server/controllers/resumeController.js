@@ -34,6 +34,7 @@ const uploadResume = async (req, res) => {
 
         const resume = await Resume.create({
             filename: req.file.filename,
+            originalName: req.file.originalname,
             filepath: req.file.path,
             uploadedBy: req.user._id,
             resumeText: extractedText,
@@ -41,6 +42,7 @@ const uploadResume = async (req, res) => {
             strengths: aiAnalysis.strengths,
             weaknesses: aiAnalysis.weaknesses,
             suggestions: aiAnalysis.suggestions,
+            actionPlan: aiAnalysis.actionPlan,
             interviewQuestions: aiAnalysis.interviewQuestions
         });
 
@@ -49,12 +51,14 @@ const uploadResume = async (req, res) => {
             resume: {
                 id: resume._id,
                 filename: resume.filename,
+                originalName: resume.originalName,
                 filepath: resume.filepath,
                 uploadedBy: resume.uploadedBy,
                 atsScore: resume.atsScore,
                 strengths: resume.strengths,
                 weaknesses: resume.weaknesses,
                 suggestions: resume.suggestions,
+                actionPlan: resume.actionPlan,
                 interviewQuestions: resume.interviewQuestions
             }
         });

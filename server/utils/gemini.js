@@ -49,7 +49,12 @@ ${resumeText}
         }
     });
 
-    const text = response.text.trim();
+    let text = response.text.trim();
+
+    text = text
+        .replace(/```json/g, "")
+        .replace(/```/g, "")
+        .trim();
 
     let aiResult;
 
@@ -57,7 +62,6 @@ ${resumeText}
         aiResult = JSON.parse(text);
     } catch (error) {
         console.log("AI RAW RESPONSE:", text);
-
         throw new Error("AI returned invalid JSON. Please try uploading again.");
     }
 
@@ -75,6 +79,22 @@ ${resumeText}
         suggestions: Array.isArray(aiResult.suggestions)
             ? aiResult.suggestions
             : [],
+
+        actionPlan: {
+            priorityFixes: Array.isArray(aiResult.actionPlan?.priorityFixes)
+                ? aiResult.actionPlan.priorityFixes
+                : [],
+
+            keywordSuggestions: Array.isArray(aiResult.actionPlan?.keywordSuggestions)
+                ? aiResult.actionPlan.keywordSuggestions
+                : [],
+
+            projectImprovements: Array.isArray(aiResult.actionPlan?.projectImprovements)
+                ? aiResult.actionPlan.projectImprovements
+                : [],
+
+            estimatedImprovement: aiResult.actionPlan?.estimatedImprovement || ""
+        },
 
         interviewQuestions: {
             technical: Array.isArray(aiResult.interviewQuestions?.technical)
