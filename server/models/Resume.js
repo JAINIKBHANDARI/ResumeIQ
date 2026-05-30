@@ -20,6 +20,25 @@ const resumeSchema = new mongoose.Schema(
 
         resumeText: {
             type: String
+        },
+
+        atsScore: {
+            type: Number
+        },
+
+        strengths: {
+            type: [String],
+            default: []
+        },
+
+        weaknesses: {
+            type: [String],
+            default: []
+        },
+
+        suggestions: {
+            type: [String],
+            default: []
         }
     },
     {
