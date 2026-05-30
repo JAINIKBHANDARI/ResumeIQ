@@ -2,7 +2,7 @@ const { PDFParse } = require("pdf-parse");
 const Resume = require("../models/Resume");
 const analyzeResumeWithAI = require("../utils/gemini");
 
-// Upload Resume, Extract Text, and Analyze with AI
+// Upload Resume, Extract Text, Analyze with AI, and Generate Questions
 const uploadResume = async (req, res) => {
     try {
         if (!req.file) {
@@ -40,11 +40,12 @@ const uploadResume = async (req, res) => {
             atsScore: aiAnalysis.atsScore,
             strengths: aiAnalysis.strengths,
             weaknesses: aiAnalysis.weaknesses,
-            suggestions: aiAnalysis.suggestions
+            suggestions: aiAnalysis.suggestions,
+            interviewQuestions: aiAnalysis.interviewQuestions
         });
 
         res.status(201).json({
-            message: "Resume uploaded, text extracted, and analyzed successfully",
+            message: "Resume uploaded, analyzed, and interview questions generated successfully",
             resume: {
                 id: resume._id,
                 filename: resume.filename,
@@ -53,7 +54,8 @@ const uploadResume = async (req, res) => {
                 atsScore: resume.atsScore,
                 strengths: resume.strengths,
                 weaknesses: resume.weaknesses,
-                suggestions: resume.suggestions
+                suggestions: resume.suggestions,
+                interviewQuestions: resume.interviewQuestions
             }
         });
 
@@ -65,6 +67,81 @@ const uploadResume = async (req, res) => {
     }
 };
 
+const getResumeHistory = async (req, res) => {
+    try {
+        const resumes = await Resume.find({ uploadedBy: req.user._id })
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            message: "Resume history fetched successfully",
+            count: resumes.length,
+            resumes
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+const getResumeById = async (req, res) => {
+    try {
+        const resume = await Resume.findOne({
+            _id: req.params.id,
+            uploadedBy: req.user._id
+        });
+
+        if (!resume) {
+            return res.status(404).json({
+                message: "Resume analysis not found"
+            });
+        }
+
+        res.status(200).json({
+            message: "Resume analysis fetched successfully",
+            resume
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
+const deleteResumeById = async (req, res) => {
+    try {
+        const resume = await Resume.findOne({
+            _id: req.params.id,
+            uploadedBy: req.user._id
+        });
+
+        if (!resume) {
+            return res.status(404).json({
+                message: "Resume analysis not found"
+            });
+        }
+
+        await Resume.findByIdAndDelete(req.params.id);
+
+        res.status(200).json({
+            message: "Resume analysis deleted successfully"
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            message: "Server error",
+            error: error.message
+        });
+    }
+};
+
 module.exports = {
-    uploadResume
+    uploadResume,
+    getResumeHistory,
+    getResumeById,
+    deleteResumeById
 };

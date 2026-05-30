@@ -39,6 +39,21 @@ const resumeSchema = new mongoose.Schema(
         suggestions: {
             type: [String],
             default: []
+        },
+
+        interviewQuestions: {
+            technical: {
+                type: [String],
+                default: []
+            },
+            project: {
+                type: [String],
+                default: []
+            },
+            hr: {
+                type: [String],
+                default: []
+            }
         }
     },
     {
