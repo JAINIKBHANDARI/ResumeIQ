@@ -32,7 +32,7 @@ function Navbar() {
         <header className="navbar">
             <div className="nav-container">
                 <Link to={token ? "/dashboard" : "/"} className="brand">
-                    <div className="brand-mark">RIQ</div>
+                   <img src="/logo.svg" alt="ResumeIQ Logo" className="brand-logo" />
                     <div>
                         <h2>ResumeIQ</h2>
                         <span>AI Resume Reviewer</span>

@@ -1,0 +1,34 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Dark Background -->
+  <rect width="512" height="512" fill="#121212"/>
+  
+  <!-- Document Shape (Centered with Padding) -->
+  <g transform="translate(100, 100) scale(0.6)">
+    <path d="M40 0H400V512H40V0Z" fill="white"/>
+    
+    <!-- Profile Silhouette -->
+    <circle cx="140" cy="110" r="50" fill="#121212"/>
+    <path d="M60 250C60 180 220 180 220 250H60Z" fill="#121212"/>
+    
+    <!-- Document Lines -->
+    <rect x="250" y="80" width="100" height="15" rx="5" fill="#121212"/>
+    <rect x="250" y="115" width="70" height="15" rx="5" fill="#121212"/>
+    
+    <!-- Checkboxes -->
+    <rect x="80" y="320" width="45" height="45" rx="4" fill="#121212"/>
+    <path d="M90 342L100 352L115 330" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <rect x="80" y="400" width="45" height="45" rx="4" fill="#121212"/>
+    <path d="M90 422L100 432L115 410" stroke="white" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+    
+    <!-- Lines next to checkboxes -->
+    <rect x="150" y="335" width="150" height="15" rx="5" fill="#121212"/>
+    <rect x="150" y="415" width="150" height="15" rx="5" fill="#121212"/>
+  </g>
+  
+  <!-- Magnifying Glass -->
+  <g transform="translate(260, 260)">
+    <circle cx="80" cy="80" r="70" stroke="white" stroke-width="25" fill="#121212"/>
+    <rect x="135" y="145" width="70" height="30" rx="15" transform="rotate(45 135 145)" fill="white"/>
+  </g>
+</svg>
