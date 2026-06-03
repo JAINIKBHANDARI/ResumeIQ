@@ -1,5 +1,5 @@
 import { downloadReportPdf } from "../utils/downloadReportPdf";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
 
@@ -10,6 +10,9 @@ function Result() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [isSpeaking, setIsSpeaking] = useState(false);
+    const speechQueueRef = useRef([]);
+    const speechIndexRef = useRef(0);
+    const speechStoppedRef = useRef(false);
 
     useEffect(() => {
         const fetchResult = async () => {
@@ -37,6 +40,7 @@ function Result() {
 
     useEffect(() => {
         return () => {
+            speechStoppedRef.current = true;
             window.speechSynthesis?.cancel();
         };
     }, []);
@@ -59,26 +63,76 @@ function Result() {
         formatListForSpeech("HR Questions", resume.interviewQuestions?.hr)
     ].join(" ");
 
+    const splitSpeechText = (text) => {
+        const sentences = text
+            .replace(/\s+/g, " ")
+            .match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [];
+        const chunks = [];
+        let currentChunk = "";
+
+        sentences.forEach((sentence) => {
+            if (`${currentChunk} ${sentence}`.trim().length > 180 && currentChunk) {
+                chunks.push(currentChunk);
+                currentChunk = sentence;
+            } else {
+                currentChunk = `${currentChunk} ${sentence}`.trim();
+            }
+        });
+
+        if (currentChunk) chunks.push(currentChunk);
+
+        return chunks;
+    };
+
+    const speakNextChunk = () => {
+        if (speechStoppedRef.current) return;
+
+        const text = speechQueueRef.current[speechIndexRef.current];
+
+        if (!text) {
+            setIsSpeaking(false);
+            return;
+        }
+
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+
+        utterance.onend = () => {
+            speechIndexRef.current += 1;
+            speakNextChunk();
+        };
+
+        utterance.onerror = () => {
+            setIsSpeaking(false);
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+        setTimeout(() => {
+            window.speechSynthesis?.resume();
+        }, 80);
+    };
+
     const handleReadReport = () => {
         if (!("speechSynthesis" in window)) {
             alert("Read aloud is not supported in this browser.");
             return;
         }
 
+        speechStoppedRef.current = true;
         window.speechSynthesis.cancel();
-
-        const utterance = new SpeechSynthesisUtterance(getReportSpeechText());
-        utterance.rate = 0.95;
-        utterance.pitch = 1;
-
-        utterance.onstart = () => setIsSpeaking(true);
-        utterance.onend = () => setIsSpeaking(false);
-        utterance.onerror = () => setIsSpeaking(false);
-
-        window.speechSynthesis.speak(utterance);
+        speechStoppedRef.current = false;
+        speechIndexRef.current = 0;
+        speechQueueRef.current = splitSpeechText(getReportSpeechText());
+        setIsSpeaking(true);
+        speakNextChunk();
     };
 
     const handleStopReading = () => {
+        speechStoppedRef.current = true;
+        speechQueueRef.current = [];
+        speechIndexRef.current = 0;
         window.speechSynthesis?.cancel();
         setIsSpeaking(false);
     };
