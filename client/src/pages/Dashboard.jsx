@@ -2,6 +2,108 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
 
+const getScoreLabel = (score = 0) => {
+    if (score >= 85) return "Excellent";
+    if (score >= 70) return "Good";
+    if (score >= 50) return "Needs Improvement";
+    return "Poor";
+};
+
+const getScoreClass = (score = 0) => {
+    if (score >= 85) return "excellent";
+    if (score >= 70) return "good";
+    if (score >= 50) return "needs-improvement";
+    return "poor";
+};
+
+const getScoreTone = (score = 0) => {
+    if (score >= 70) return "good";
+    if (score >= 50) return "improve";
+    return "missing";
+};
+
+const getBestScore = (reports) => {
+    const scores = reports.map((resume) => Number(resume.atsScore) || 0);
+    return scores.length > 0 ? Math.max(...scores) : 0;
+};
+
+const getAverageScore = (reports) => {
+    const scores = reports.map((resume) => Number(resume.atsScore) || 0);
+
+    if (scores.length === 0) return 0;
+
+    return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
+};
+
+const mentionsProject = (items = []) => (
+    items.some((item) => String(item).toLowerCase().includes("project"))
+);
+
+const getReadinessBreakdown = (latestReport) => {
+    if (!latestReport) {
+        return [
+            { label: "Content Quality", value: "Missing", tone: "missing" },
+            { label: "Skills Relevance", value: "Missing", tone: "missing" },
+            { label: "Project Strength", value: "Missing", tone: "missing" },
+            { label: "Interview Readiness", value: "Missing", tone: "missing" }
+        ];
+    }
+
+    const score = Number(latestReport.atsScore) || 0;
+    const hasFeedback = Boolean(
+        latestReport.strengths?.length
+        || latestReport.weaknesses?.length
+        || latestReport.suggestions?.length
+    );
+    const projectStrengthMentioned = mentionsProject(latestReport.strengths || []);
+    const projectImprovementMentioned = mentionsProject([
+        ...(latestReport.weaknesses || []),
+        ...(latestReport.suggestions || [])
+    ]);
+    const hasInterviewQuestions = Boolean(
+        latestReport.interviewQuestions?.technical?.length
+        || latestReport.interviewQuestions?.project?.length
+        || latestReport.interviewQuestions?.hr?.length
+    );
+
+    return [
+        {
+            label: "Content Quality",
+            value: score >= 70 ? "Good" : "Improve",
+            tone: getScoreTone(score)
+        },
+        {
+            label: "Skills Relevance",
+            value: hasFeedback ? "Good" : "Missing",
+            tone: hasFeedback ? "good" : "missing"
+        },
+        {
+            label: "Project Strength",
+            value: projectStrengthMentioned ? "Good" : projectImprovementMentioned ? "Improve" : "Missing",
+            tone: projectStrengthMentioned ? "good" : projectImprovementMentioned ? "improve" : "missing"
+        },
+        {
+            label: "Interview Readiness",
+            value: hasInterviewQuestions ? "Ready" : "Missing",
+            tone: hasInterviewQuestions ? "good" : "missing"
+        }
+    ];
+};
+
+const getImprovementActions = (latestReport) => {
+    if (!latestReport) return [];
+
+    const suggestions = latestReport.suggestions?.filter(Boolean).slice(0, 3) || [];
+
+    if (suggestions.length > 0) return suggestions;
+
+    return [
+        "Add measurable impact to project descriptions",
+        "Add role-specific keywords from target jobs",
+        "Add GitHub/live links for important projects"
+    ];
+};
+
 function Dashboard() {
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -32,19 +134,27 @@ function Dashboard() {
 
     const totalReports = resumes.length;
     const latestReport = resumes[0];
-    const latestScore = latestReport?.atsScore || 0;
+    const latestScore = Number(latestReport?.atsScore) || 0;
+    const bestScore = getBestScore(resumes);
+    const averageScore = getAverageScore(resumes);
+    const focusItem = latestReport?.weaknesses?.[0]
+        || latestReport?.suggestions?.[0]
+        || "Upload your first resume to get personalized improvement insights.";
+    const healthScore = latestReport ? latestScore : averageScore;
+    const healthLabel = latestReport ? getScoreLabel(healthScore) : "No Reports";
+    const healthClass = latestReport ? getScoreClass(healthScore) : "neutral";
+    const readinessBreakdown = getReadinessBreakdown(latestReport);
+    const improvementActions = getImprovementActions(latestReport);
 
     return (
-        <main className="page">
-            <section className="hero-section">
-                <div>
+        <main className="page dashboard-page">
+            <section className="dashboard-hero">
+                <div className="dashboard-hero-copy">
                     <div className="eyebrow">Resume Intelligence</div>
-                    <h1>
-                        Welcome back, {user?.name || "User"}.
-                    </h1>
+                    <h1>Welcome back, {user?.name || "User"}.</h1>
                     <p>
-                        Upload resumes, get ATS score, AI suggestions, and interview questions
-                        in one clean dashboard.
+                        Track your resume performance, spot the next best improvement,
+                        and keep every AI report within reach.
                     </p>
 
                     <div className="dashboard-actions">
@@ -58,34 +168,80 @@ function Dashboard() {
                     </div>
                 </div>
 
-                <div className="hero-card">
-                    <span>Latest ATS Score</span>
-                    <h2>{loading ? "..." : `${latestScore}/100`}</h2>
+                <div className={`resume-health-card ${healthClass}`}>
+                    <div className="health-card-top">
+                        <span>Resume Readiness</span>
+                        <strong>{loading ? "..." : healthLabel}</strong>
+                    </div>
+                    <div className="health-score">
+                        {loading ? "..." : `${healthScore}/100`}
+                    </div>
+                    <div className="health-meter" aria-hidden="true">
+                        <span style={{ width: `${Math.min(healthScore, 100)}%` }}></span>
+                    </div>
                     <p>
                         {latestReport
-                            ? "Based on your most recent resume analysis."
-                            : "Upload your first resume to generate a score."}
+                            ? "A quick readiness snapshot from your latest ATS score, AI feedback, projects, and interview prep."
+                            : "Analyze your first resume to calculate readiness."}
                     </p>
+
+                    <ul className="readiness-breakdown">
+                        {readinessBreakdown.map((item) => (
+                            <li className={item.tone} key={item.label}>
+                                {item.label}
+                                <span>{item.value}</span>
+                            </li>
+                        ))}
+                    </ul>
                 </div>
             </section>
 
-            <section className="stats-grid">
-                <div className="stat-card">
+            <section className="dashboard-insights-grid">
+                <article className="insight-card">
                     <span>Total Reports</span>
                     <h3>{loading ? "..." : totalReports}</h3>
-                    <p>Resume analyses generated till now.</p>
-                </div>
+                    <p>Resume analyses generated so far.</p>
+                </article>
 
-                <div className="stat-card">
-                    <span>AI Feedback</span>
-                    <h3>ATS + Review</h3>
-                    <p>Strengths, weaknesses, and suggestions generated using AI.</p>
-                </div>
+                <article className="insight-card accent" title="Based on your latest resume analysis">
+                    <span>Latest ATS Score</span>
+                    <h3>{loading ? "..." : `${latestScore}/100`}</h3>
+                    <p>{latestReport ? getScoreLabel(latestScore) : "No report yet"}</p>
+                </article>
 
-                <div className="stat-card">
-                    <span>Interview Prep</span>
-                    <h3>Questions</h3>
-                    <p>Technical, project-based, and HR questions from resume content.</p>
+                <article className="insight-card" title="Highest score across all saved reports">
+                    <span>Best ATS Score</span>
+                    <h3>{loading ? "..." : `${bestScore}/100`}</h3>
+                    <p>Your strongest report score.</p>
+                </article>
+
+                <article className="insight-card" title="Average score from your resume history">
+                    <span>Average ATS Score</span>
+                    <h3>{loading ? "..." : `${averageScore}/100`}</h3>
+                    <p>Average across all saved reports.</p>
+                </article>
+            </section>
+
+            <section className="focus-panel" title="Based on your latest weakness/suggestion">
+                <div className="focus-panel-header">
+                    <div className="eyebrow">Improvement Focus</div>
+                    <h2>Next best upgrade</h2>
+                    <span className="focus-badge">High impact</span>
+                </div>
+                <div className="focus-panel-body">
+                    <p>{loading ? "Finding your next focus area..." : focusItem}</p>
+
+                    {latestReport ? (
+                        <ol className="focus-actions">
+                            {improvementActions.map((action) => (
+                                <li key={action}>{action}</li>
+                            ))}
+                        </ol>
+                    ) : (
+                        <p className="focus-empty">
+                            Upload your first resume to get personalized improvement insights.
+                        </p>
+                    )}
                 </div>
             </section>
 
@@ -109,25 +265,39 @@ function Dashboard() {
                 ) : resumes.length === 0 ? (
                     <div className="empty-state">
                         <h2>No reports yet</h2>
-                        <p>Upload your first resume and generate an AI report.</p>
+                        <p>Upload your first resume to see ATS trends, AI feedback, interview questions, and downloadable reports here.</p>
+                        <Link className="btn-primary link-button empty-action" to="/upload">
+                            Analyze New Resume
+                        </Link>
                     </div>
                 ) : (
-                    <div className="recent-list">
-                        {resumes.slice(0, 3).map((resume) => (
-                            <article className="recent-card" key={resume._id}>
-                                <div>
-                                    <h3>{resume.originalName || resume.filename}</h3>
-                                    <p>
-                                        {new Date(resume.createdAt).toLocaleDateString()} • ATS Score{" "}
-                                        <strong>{resume.atsScore}/100</strong>
-                                    </p>
-                                </div>
+                    <div className="recent-list dashboard-recent-list">
+                        {resumes.slice(0, 3).map((resume) => {
+                            const score = Number(resume.atsScore) || 0;
+                            const status = getScoreLabel(score);
+                            const scoreClass = getScoreClass(score);
 
-                                <Link className="btn-secondary" to={`/result/${resume._id}`}>
-                                    View
-                                </Link>
-                            </article>
-                        ))}
+                            return (
+                                <article className="recent-card dashboard-recent-card" key={resume._id}>
+                                    <div className="recent-report-main">
+                                        <h3>{resume.originalName || resume.filename}</h3>
+                                        <p>{new Date(resume.createdAt).toLocaleDateString()}</p>
+                                    </div>
+
+                                    <div className="recent-report-meta">
+                                        <span className={`score-badge ${scoreClass}`}>
+                                            {score}/100
+                                        </span>
+                                        <span className={`status-label ${scoreClass}`}>
+                                            {status}
+                                        </span>
+                                        <Link className="btn-secondary" to={`/result/${resume._id}`}>
+                                            View
+                                        </Link>
+                                    </div>
+                                </article>
+                            );
+                        })}
                     </div>
                 )}
             </section>
