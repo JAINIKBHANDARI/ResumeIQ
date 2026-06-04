@@ -2016,3 +2016,508 @@
 .read-report-btn:hover {
     transform: none;
 }
+
+/* Mobile layout refinements */
+html,
+body {
+    max-width: 100%;
+    overflow-x: hidden;
+}
+
+.page,
+.nav-container,
+.result-grid,
+.questions-grid,
+.dashboard-hero,
+.dashboard-insights-grid,
+.recent-list {
+    min-width: 0;
+}
+
+.result-card,
+.score-card,
+.recent-card,
+.history-card,
+.upload-card,
+.privacy-card,
+.empty-state {
+    min-width: 0;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+    body {
+        background:
+            radial-gradient(circle at top left, rgba(37, 99, 235, 0.06), transparent 22rem),
+            var(--bg);
+    }
+
+    .navbar {
+        position: sticky;
+        top: 0;
+    }
+
+    .nav-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 12px 16px;
+        align-items: stretch;
+        gap: 12px;
+    }
+
+    .brand {
+        justify-content: flex-start;
+        min-width: 0;
+    }
+
+    .brand > div {
+        min-width: 0;
+    }
+
+    .brand h2,
+    .brand span {
+        overflow-wrap: anywhere;
+    }
+
+    .brand-logo {
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        flex: 0 0 auto;
+    }
+
+    .nav-links {
+        width: 100%;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-start;
+        align-items: stretch;
+        gap: 8px;
+        overflow: visible;
+        padding-bottom: 0;
+    }
+
+    .nav-links a,
+    .nav-button {
+        width: auto;
+        min-width: 92px;
+        flex: 1 1 calc(33.333% - 8px);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 42px;
+        margin: 0;
+        padding: 10px 8px;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .nav-links .theme-switch {
+        grid-column: auto;
+        width: 132px;
+        min-width: 132px;
+        flex: 0 0 132px;
+        margin: 0;
+    }
+
+    .page {
+        width: 100%;
+        max-width: 100%;
+        padding: 30px 16px;
+    }
+
+    .section-header {
+        margin-bottom: 20px;
+    }
+
+    .section-header h1,
+    .auth-card h1 {
+        font-size: clamp(28px, 9vw, 38px);
+        line-height: 1.08;
+    }
+
+    .section-header p,
+    .dashboard-hero-copy p,
+    .focus-panel-body p,
+    .questions-section p {
+        font-size: 15px;
+        line-height: 1.65;
+    }
+
+    .result-actions {
+        margin-bottom: 18px;
+        gap: 10px;
+    }
+
+    .result-actions .download-btn,
+    .result-actions .read-report-btn {
+        min-height: 46px;
+        border-radius: 12px;
+    }
+
+    .voice-indicator {
+        min-height: 42px;
+        padding: 9px 12px;
+        font-size: 13px;
+    }
+
+    .report-section {
+        width: 100%;
+        padding: 0;
+        border-radius: 0;
+    }
+
+    .result-grid,
+    .questions-grid {
+        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .score-card,
+    .result-card {
+        width: 100%;
+        border-radius: 22px;
+        padding: 22px;
+    }
+
+    .score-card h2 {
+        font-size: 42px;
+        line-height: 1.05;
+        letter-spacing: -0.04em;
+        overflow-wrap: anywhere;
+    }
+
+    .score-card p {
+        margin-bottom: 0;
+        line-height: 1.6;
+    }
+
+    .score-breakdown-card {
+        grid-column: auto;
+    }
+
+    .score-breakdown-list {
+        gap: 16px;
+    }
+
+    .score-breakdown-item {
+        gap: 9px;
+    }
+
+    .score-breakdown-item div:first-child {
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .score-breakdown-item div:first-child span {
+        min-width: 0;
+        flex: 1 1 auto;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .score-breakdown-item strong {
+        flex: 0 0 auto;
+        font-size: 14px;
+    }
+
+    .score-breakdown-meter {
+        width: 100%;
+        height: 10px;
+    }
+
+    .result-card h2,
+    .questions-section > h2 {
+        font-size: 23px;
+        line-height: 1.2;
+    }
+
+    .result-card h3 {
+        font-size: 19px;
+        line-height: 1.25;
+    }
+
+    .result-card ul {
+        padding-left: 18px;
+        margin-top: 12px;
+    }
+
+    .result-card li,
+    .focus-actions li {
+        margin-bottom: 11px;
+        font-size: 15px;
+        line-height: 1.65;
+        overflow-wrap: anywhere;
+    }
+
+    .questions-section {
+        margin-top: 24px;
+    }
+
+    .dashboard-page {
+        gap: 24px;
+    }
+
+    .dashboard-hero,
+    .focus-panel,
+    .dashboard-insights-grid {
+        width: 100%;
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .dashboard-hero-copy,
+    .resume-health-card,
+    .insight-card,
+    .focus-panel {
+        width: 100%;
+        border-radius: 22px;
+        padding: 22px;
+    }
+
+    .dashboard-hero-copy h1 {
+        font-size: clamp(30px, 9vw, 40px);
+        line-height: 1.08;
+    }
+
+    .dashboard-actions {
+        gap: 10px;
+    }
+
+    .dashboard-actions .btn-primary,
+    .dashboard-actions .btn-secondary,
+    .empty-action {
+        min-height: 46px;
+        width: 100%;
+    }
+
+    .health-score {
+        font-size: 44px;
+        letter-spacing: -0.04em;
+    }
+
+    .health-card-top {
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .health-card-top strong {
+        white-space: normal;
+    }
+
+    .readiness-breakdown li {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 8px;
+        line-height: 1.4;
+    }
+
+    .readiness-breakdown li span {
+        width: fit-content;
+        min-width: 0;
+    }
+
+    .insight-card h3 {
+        font-size: 31px;
+    }
+
+    .focus-panel h2,
+    .section-title-row h2 {
+        font-size: 25px;
+        line-height: 1.2;
+    }
+
+    .focus-panel {
+        align-items: stretch;
+    }
+
+    .section-title-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .section-title-row .btn-secondary {
+        width: 100%;
+        text-align: center;
+    }
+
+    .recent-card,
+    .history-card {
+        width: 100%;
+        align-items: stretch;
+        flex-direction: column;
+        gap: 14px;
+        border-radius: 20px;
+        padding: 18px;
+    }
+
+    .recent-report-meta,
+    .history-actions {
+        width: 100%;
+        align-items: stretch;
+        justify-content: flex-start;
+        gap: 9px;
+    }
+
+    .score-badge,
+    .status-label,
+    .recent-report-meta .btn-secondary {
+        flex: 1 1 100%;
+        width: 100%;
+        min-height: 40px;
+    }
+
+    .upload-card,
+    .privacy-card,
+    .empty-state {
+        width: 100%;
+        border-radius: 22px;
+        padding: 22px;
+    }
+
+    .upload-box {
+        border-radius: 20px;
+        padding: 22px;
+    }
+}
+
+@media (max-width: 480px) {
+    .nav-container {
+        padding: 12px 14px;
+    }
+
+    .brand {
+        gap: 10px;
+    }
+
+    .brand-logo {
+        width: 42px;
+        height: 42px;
+    }
+
+    .brand h2 {
+        font-size: 18px;
+    }
+
+    .brand span {
+        font-size: 11px;
+    }
+
+    .nav-links {
+        gap: 7px;
+    }
+
+    .nav-links a,
+    .nav-button {
+        flex-basis: 100%;
+        min-width: 0;
+        width: 100%;
+        min-height: 42px;
+        font-size: 13px;
+    }
+
+    .nav-links .theme-switch {
+        flex: 0 0 132px;
+        width: 132px;
+        min-width: 132px;
+        margin: 0 auto;
+    }
+
+    .page {
+        padding: 24px 14px;
+    }
+
+    .section-header h1,
+    .dashboard-hero-copy h1 {
+        font-size: 30px;
+        letter-spacing: -0.035em;
+    }
+
+    .eyebrow {
+        font-size: 11px;
+        letter-spacing: 0.07em;
+    }
+
+    .score-card,
+    .result-card,
+    .dashboard-hero-copy,
+    .resume-health-card,
+    .insight-card,
+    .focus-panel,
+    .upload-card,
+    .privacy-card,
+    .empty-state {
+        border-radius: 18px;
+        padding: 18px;
+    }
+
+    .score-card h2 {
+        font-size: 34px;
+    }
+
+    .score-card span,
+    .health-card-top span,
+    .insight-card span {
+        font-size: 11px;
+        letter-spacing: 0.07em;
+    }
+
+    .score-breakdown-item div:first-child {
+        gap: 8px;
+    }
+
+    .score-breakdown-item strong {
+        font-size: 13px;
+    }
+
+    .result-card h2,
+    .questions-section > h2 {
+        font-size: 21px;
+    }
+
+    .result-card h3 {
+        font-size: 18px;
+    }
+
+    .result-card li,
+    .focus-actions li {
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+    .download-btn,
+    .read-report-btn,
+    .btn-primary,
+    .btn-secondary,
+    .nav-button,
+    .btn-danger {
+        white-space: normal;
+    }
+
+    .voice-indicator {
+        gap: 8px;
+    }
+
+    .health-score {
+        font-size: 38px;
+    }
+
+    .insight-card h3 {
+        font-size: 28px;
+    }
+
+    .focus-panel h2,
+    .section-title-row h2 {
+        font-size: 23px;
+    }
+
+    .focus-actions {
+        padding-left: 20px;
+    }
+
+    .upload-box {
+        border-radius: 18px;
+        padding: 18px;
+    }
+}
