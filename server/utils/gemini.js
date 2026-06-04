@@ -1,115 +1,134 @@
 const { GoogleGenAI } = require("@google/genai");
+const {
+    deterministicFallbackScore,
+    validateAnalysis
+} = require("./atsScoring");
 
 const ai = new GoogleGenAI({
     apiKey: process.env.GEMINI_API_KEY
 });
 
-const analyzeResumeWithAI = async (resumeText) => {
-    const prompt = `
-You are an AI resume reviewer and interview assistant.
+const buildPrompt = (resumeText) => `
+You are ResumeIQ's strict ATS resume evaluator.
 
-Analyze the resume text and return valid JSON only.
+Analyze the resume text using this 100-point rubric. Do not cluster around any default score.
+Weak or incomplete resumes should score 30-50. Average student resumes should score 55-70.
+Good resumes should score 75-85. Excellent resumes should score 85-95.
+Do not score above 90 unless the resume has strong evidence, complete sections, measurable impact, and polished formatting.
 
-Return this exact JSON structure:
+Rubric:
+1. contactInformation: 0-10
+- Name present
+- Email present
+- Phone present
+- LinkedIn/GitHub/portfolio present
+
+2. resumeSections: 0-15
+- Education present
+- Skills present
+- Projects or Experience present
+- Achievements/Certifications optional
+- Proper section headings
+
+3. skillsAndKeywords: 0-20
+- Relevant technical skills
+- Tools/frameworks
+- Role-related keywords
+- No keyword stuffing
+
+4. experienceProjectsQuality: 0-20
+- Clear project/experience descriptions
+- Uses action verbs
+- Shows technical contribution
+- Mentions tech stack
+- Shows impact or outcome
+
+5. atsFormatting: 0-15
+- Simple layout
+- No tables/images-heavy text dependency
+- Good readability
+- Bullet points used properly
+- Avoids unnecessary symbols
+
+6. quantificationImpact: 0-10
+- Numbers/metrics where possible
+- Measurable achievements
+- Clear outcomes
+
+7. grammarProfessionalism: 0-10
+- No spelling mistakes
+- Professional wording
+- Consistent formatting
+
+Return JSON only with this exact shape:
 {
-  "atsScore": 75,
-  "strengths": ["point 1", "point 2", "point 3"],
-  "weaknesses": ["point 1", "point 2", "point 3"],
-  "suggestions": ["point 1", "point 2", "point 3"],
+  "atsScore": 0,
+  "scoreBreakdown": {
+    "contactInformation": 0,
+    "resumeSections": 0,
+    "skillsAndKeywords": 0,
+    "experienceProjectsQuality": 0,
+    "atsFormatting": 0,
+    "quantificationImpact": 0,
+    "grammarProfessionalism": 0
+  },
+  "strengths": [],
+  "weaknesses": [],
+  "missingKeywords": [],
+  "improvementSuggestions": [],
+  "resumeHealth": {
+    "sectionCompleteness": "Good | Average | Weak",
+    "formattingQuality": "Good | Average | Needs Improvement",
+    "keywordStrength": "Good | Average | Weak",
+    "projectImpact": "Good | Average | Needs Improvement",
+    "quantifiedAchievements": "Good | Average | Weak",
+    "contactInfoStatus": "Good | Average | Weak"
+  },
   "interviewQuestions": {
-    "technical": ["question 1", "question 2", "question 3", "question 4", "question 5"],
-    "project": ["question 1", "question 2", "question 3", "question 4", "question 5"],
-    "hr": ["question 1", "question 2", "question 3", "question 4", "question 5"]
+    "technical": [],
+    "project": [],
+    "hr": []
   }
 }
 
 Rules:
 - Return only valid JSON.
-- Do not use markdown.
-- Do not add explanation.
-- Do not add comments.
-- Every array item must be separated by commas.
-- atsScore must be a number between 0 and 100.
-- strengths must have 3 to 5 points.
-- weaknesses must have 3 to 5 points.
-- suggestions must have 3 to 5 points.
-- technical must have 5 questions.
-- project must have 5 questions.
-- hr must have 5 questions.
+- atsScore must equal the sum of scoreBreakdown categories.
+- Never use a default score.
+- If evidence is missing, give low category scores.
+- Include 3-5 strengths, 3-5 weaknesses, 3-6 missingKeywords, 3-5 improvementSuggestions.
+- Include exactly 5 technical, 5 project, and 5 HR interview questions.
 
 Resume Text:
 ${resumeText}
 `;
 
-    const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: prompt,
-        config: {
-            responseMimeType: "application/json"
-        }
-    });
-
-    let text = response.text.trim();
-
-    text = text
+const parseGeminiJson = (text) => {
+    const cleanedText = text
         .replace(/```json/g, "")
         .replace(/```/g, "")
         .trim();
 
-    let aiResult;
+    return JSON.parse(cleanedText);
+};
 
+const analyzeResumeWithAI = async (resumeText) => {
     try {
-        aiResult = JSON.parse(text);
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            contents: buildPrompt(resumeText),
+            config: {
+                responseMimeType: "application/json"
+            }
+        });
+
+        const aiResult = parseGeminiJson(response.text.trim());
+
+        return validateAnalysis(aiResult, resumeText);
     } catch (error) {
-        console.log("AI RAW RESPONSE:", text);
-        throw new Error("AI returned invalid JSON. Please try uploading again.");
+        console.error("Gemini analysis failed safely:", error.message);
+        return deterministicFallbackScore(resumeText);
     }
-
-    return {
-        atsScore: aiResult.atsScore || 0,
-
-        strengths: Array.isArray(aiResult.strengths)
-            ? aiResult.strengths
-            : [],
-
-        weaknesses: Array.isArray(aiResult.weaknesses)
-            ? aiResult.weaknesses
-            : [],
-
-        suggestions: Array.isArray(aiResult.suggestions)
-            ? aiResult.suggestions
-            : [],
-
-        actionPlan: {
-            priorityFixes: Array.isArray(aiResult.actionPlan?.priorityFixes)
-                ? aiResult.actionPlan.priorityFixes
-                : [],
-
-            keywordSuggestions: Array.isArray(aiResult.actionPlan?.keywordSuggestions)
-                ? aiResult.actionPlan.keywordSuggestions
-                : [],
-
-            projectImprovements: Array.isArray(aiResult.actionPlan?.projectImprovements)
-                ? aiResult.actionPlan.projectImprovements
-                : [],
-
-            estimatedImprovement: aiResult.actionPlan?.estimatedImprovement || ""
-        },
-
-        interviewQuestions: {
-            technical: Array.isArray(aiResult.interviewQuestions?.technical)
-                ? aiResult.interviewQuestions.technical
-                : [],
-
-            project: Array.isArray(aiResult.interviewQuestions?.project)
-                ? aiResult.interviewQuestions.project
-                : [],
-
-            hr: Array.isArray(aiResult.interviewQuestions?.hr)
-                ? aiResult.interviewQuestions.hr
-                : []
-        }
-    };
 };
 
 module.exports = analyzeResumeWithAI;

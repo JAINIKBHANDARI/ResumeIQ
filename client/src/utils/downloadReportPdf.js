@@ -13,6 +13,16 @@ export const downloadReportPdf = (resume) => {
     const bottomMargin = 18;
     const contentWidth = pageWidth - margin * 2;
     let y = 20;
+    const hasScore = Number.isFinite(Number(resume.atsScore));
+    const scoreBreakdownItems = [
+        ["Contact Information", resume.scoreBreakdown?.contactInformation, 10],
+        ["Resume Sections", resume.scoreBreakdown?.resumeSections, 15],
+        ["Skills and Keywords", resume.scoreBreakdown?.skillsAndKeywords, 20],
+        ["Experience/Projects Quality", resume.scoreBreakdown?.experienceProjectsQuality, 20],
+        ["ATS Formatting", resume.scoreBreakdown?.atsFormatting, 15],
+        ["Quantification and Impact", resume.scoreBreakdown?.quantificationImpact, 10],
+        ["Grammar and Professionalism", resume.scoreBreakdown?.grammarProfessionalism, 10]
+    ].filter(([, value]) => Number.isFinite(Number(value)));
 
     const addPageIfNeeded = (requiredHeight = 10) => {
         if (y + requiredHeight > pageHeight - bottomMargin) {
@@ -87,12 +97,22 @@ export const downloadReportPdf = (resume) => {
     pdf.setFont("helvetica", "bold");
     pdf.setFontSize(26);
     pdf.setTextColor(37, 99, 235);
-    pdf.text(`${resume.atsScore ?? 0}/100`, margin, y);
+    pdf.text(hasScore ? `${resume.atsScore}/100` : "Score unavailable", margin, y);
     y += 12;
 
     addWrappedText(
         "The ATS score is generated based on resume structure, skill relevance, project quality, keyword usage, clarity, completeness, and overall role-readiness."
     );
+
+    if (scoreBreakdownItems.length > 0) {
+        addSectionTitle("Score Breakdown");
+        scoreBreakdownItems.forEach(([label, value, max]) => {
+            addWrappedText(`${label}: ${value}/${max}`, {
+                lineHeight: 5.8,
+                gapAfter: 1
+            });
+        });
+    }
 
     addSectionTitle("Strengths");
     addList(resume.strengths);

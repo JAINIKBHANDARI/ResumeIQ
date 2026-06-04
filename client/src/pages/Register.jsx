@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import { storeAuthData } from "../utils/auth";
 
 function Register() {
     const navigate = useNavigate();
@@ -29,8 +31,7 @@ function Register() {
         try {
             const response = await api.post("/auth/register", formData);
 
-            localStorage.setItem("token", response.data.token);
-            localStorage.setItem("user", JSON.stringify(response.data.user));
+            storeAuthData(response.data);
 
             navigate("/dashboard");
         } catch (error) {
@@ -154,8 +155,21 @@ function Register() {
                         </p>
                     </form>
 
+                    <div className="auth-divider">
+                        <span>or</span>
+                    </div>
+
+                    <GoogleAuthButton
+                        onSuccess={() => navigate("/dashboard")}
+                        onError={setError}
+                    />
+
                     <p className="auth-switch">
-                        Already have an account? <Link to="/">Login here</Link>
+                        Already have an account? <Link to="/login">Login here</Link>
+                    </p>
+
+                    <p className="auth-privacy-link">
+                        <Link to="/privacy">Privacy Policy</Link>
                     </p>
                 </div>
             </section>

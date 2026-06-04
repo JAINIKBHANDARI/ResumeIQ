@@ -134,15 +134,16 @@ function Dashboard() {
 
     const totalReports = resumes.length;
     const latestReport = resumes[0];
-    const latestScore = Number(latestReport?.atsScore) || 0;
+    const latestScore = Number(latestReport?.atsScore);
+    const latestScoreAvailable = Number.isFinite(latestScore);
     const bestScore = getBestScore(resumes);
     const averageScore = getAverageScore(resumes);
     const focusItem = latestReport?.weaknesses?.[0]
         || latestReport?.suggestions?.[0]
         || "Upload your first resume to get personalized improvement insights.";
-    const healthScore = latestReport ? latestScore : averageScore;
-    const healthLabel = latestReport ? getScoreLabel(healthScore) : "No Reports";
-    const healthClass = latestReport ? getScoreClass(healthScore) : "neutral";
+    const healthScore = latestReport && latestScoreAvailable ? latestScore : averageScore;
+    const healthLabel = latestReport && latestScoreAvailable ? getScoreLabel(healthScore) : latestReport ? "Unavailable" : "No Reports";
+    const healthClass = latestReport && latestScoreAvailable ? getScoreClass(healthScore) : "neutral";
     const readinessBreakdown = getReadinessBreakdown(latestReport);
     const improvementActions = getImprovementActions(latestReport);
 
@@ -174,7 +175,7 @@ function Dashboard() {
                         <strong>{loading ? "..." : healthLabel}</strong>
                     </div>
                     <div className="health-score">
-                        {loading ? "..." : `${healthScore}/100`}
+                        {loading ? "..." : latestScoreAvailable || !latestReport ? `${healthScore}/100` : "Unavailable"}
                     </div>
                     <div className="health-meter" aria-hidden="true">
                         <span style={{ width: `${Math.min(healthScore, 100)}%` }}></span>
@@ -205,8 +206,8 @@ function Dashboard() {
 
                 <article className="insight-card accent" title="Based on your latest resume analysis">
                     <span>Latest ATS Score</span>
-                    <h3>{loading ? "..." : `${latestScore}/100`}</h3>
-                    <p>{latestReport ? getScoreLabel(latestScore) : "No report yet"}</p>
+                    <h3>{loading ? "..." : latestScoreAvailable ? `${latestScore}/100` : "Unavailable"}</h3>
+                    <p>{latestReport && latestScoreAvailable ? getScoreLabel(latestScore) : "No report yet"}</p>
                 </article>
 
                 <article className="insight-card" title="Highest score across all saved reports">
@@ -273,9 +274,10 @@ function Dashboard() {
                 ) : (
                     <div className="recent-list dashboard-recent-list">
                         {resumes.slice(0, 3).map((resume) => {
-                            const score = Number(resume.atsScore) || 0;
+                            const score = Number(resume.atsScore);
+                            const hasScore = Number.isFinite(score);
                             const status = getScoreLabel(score);
-                            const scoreClass = getScoreClass(score);
+                            const scoreClass = hasScore ? getScoreClass(score) : "neutral";
 
                             return (
                                 <article className="recent-card dashboard-recent-card" key={resume._id}>
@@ -286,10 +288,10 @@ function Dashboard() {
 
                                     <div className="recent-report-meta">
                                         <span className={`score-badge ${scoreClass}`}>
-                                            {score}/100
+                                            {hasScore ? `${score}/100` : "No score"}
                                         </span>
                                         <span className={`status-label ${scoreClass}`}>
-                                            {status}
+                                            {hasScore ? status : "Unavailable"}
                                         </span>
                                         <Link className="btn-secondary" to={`/result/${resume._id}`}>
                                             View

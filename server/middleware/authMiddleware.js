@@ -1,6 +1,19 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
+const getCookieToken = (req) => {
+    const cookieHeader = req.headers.cookie;
+
+    if (!cookieHeader) return null;
+
+    const tokenCookie = cookieHeader
+        .split(";")
+        .map((cookie) => cookie.trim())
+        .find((cookie) => cookie.startsWith("token="));
+
+    return tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : null;
+};
+
 const protect = async (req, res, next) => {
     try {
         let token;
@@ -10,6 +23,10 @@ const protect = async (req, res, next) => {
             req.headers.authorization.startsWith("Bearer")
         ) {
             token = req.headers.authorization.split(" ")[1];
+        }
+
+        if (!token) {
+            token = getCookieToken(req);
         }
 
         if (!token) {

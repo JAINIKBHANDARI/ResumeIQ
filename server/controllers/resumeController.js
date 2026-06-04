@@ -39,9 +39,12 @@ const uploadResume = async (req, res) => {
             uploadedBy: req.user._id,
             resumeText: extractedText,
             atsScore: aiAnalysis.atsScore,
+            scoreBreakdown: aiAnalysis.scoreBreakdown,
             strengths: aiAnalysis.strengths,
             weaknesses: aiAnalysis.weaknesses,
-            suggestions: aiAnalysis.suggestions,
+            suggestions: aiAnalysis.improvementSuggestions,
+            missingKeywords: aiAnalysis.missingKeywords,
+            resumeHealth: aiAnalysis.resumeHealth,
             actionPlan: aiAnalysis.actionPlan,
             interviewQuestions: aiAnalysis.interviewQuestions
         });
@@ -55,9 +58,12 @@ const uploadResume = async (req, res) => {
                 filepath: resume.filepath,
                 uploadedBy: resume.uploadedBy,
                 atsScore: resume.atsScore,
+                scoreBreakdown: resume.scoreBreakdown,
                 strengths: resume.strengths,
                 weaknesses: resume.weaknesses,
                 suggestions: resume.suggestions,
+                missingKeywords: resume.missingKeywords,
+                resumeHealth: resume.resumeHealth,
                 actionPlan: resume.actionPlan,
                 interviewQuestions: resume.interviewQuestions
             }

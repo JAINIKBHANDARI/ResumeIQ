@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import GoogleAuthButton from "../components/GoogleAuthButton";
+import { storeAuthData } from "../utils/auth";
 
 function Login() {
     const navigate = useNavigate();
@@ -28,8 +30,7 @@ function Login() {
         try {
             const response = await api.post("/auth/login", formData);
 
-            localStorage.setItem("token", response.data.token);
-            localStorage.setItem("user", JSON.stringify(response.data.user));
+            storeAuthData(response.data);
 
             navigate("/dashboard");
         } catch (error) {
@@ -143,8 +144,25 @@ function Login() {
                         )}
                     </form>
 
+                    <p className="forgot-password-link">
+                        <Link to="/forgot-password">Forgot password?</Link>
+                    </p>
+
+                    <div className="auth-divider">
+                        <span>or</span>
+                    </div>
+
+                    <GoogleAuthButton
+                        onSuccess={() => navigate("/dashboard")}
+                        onError={setError}
+                    />
+
                     <p className="auth-switch">
                         New to ResumeIQ? <Link to="/register">Create account</Link>
+                    </p>
+
+                    <p className="auth-privacy-link">
+                        <Link to="/privacy">Privacy Policy</Link>
                     </p>
                 </div>
             </section>

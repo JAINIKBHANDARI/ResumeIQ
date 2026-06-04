@@ -45,6 +45,18 @@ function Result() {
         };
     }, []);
 
+    const hasScore = Number.isFinite(Number(resume?.atsScore));
+
+    const scoreBreakdownItems = [
+        ["Contact Information", resume?.scoreBreakdown?.contactInformation, 10],
+        ["Resume Sections", resume?.scoreBreakdown?.resumeSections, 15],
+        ["Skills and Keywords", resume?.scoreBreakdown?.skillsAndKeywords, 20],
+        ["Experience/Projects Quality", resume?.scoreBreakdown?.experienceProjectsQuality, 20],
+        ["ATS Formatting", resume?.scoreBreakdown?.atsFormatting, 15],
+        ["Quantification and Impact", resume?.scoreBreakdown?.quantificationImpact, 10],
+        ["Grammar and Professionalism", resume?.scoreBreakdown?.grammarProfessionalism, 10]
+    ].filter(([, value]) => Number.isFinite(Number(value)));
+
     const formatListForSpeech = (title, items = []) => {
         if (!items.length) return `${title}: No data available.`;
 
@@ -53,7 +65,7 @@ function Result() {
 
     const getReportSpeechText = () => [
         "ResumeIQ Analysis Report.",
-        `ATS Score: ${resume.atsScore || 0} out of 100.`,
+        hasScore ? `ATS Score: ${resume.atsScore} out of 100.` : "ATS Score is unavailable.",
         "The ATS score is generated based on resume structure, skill relevance, project quality, keyword usage, clarity, completeness, and overall role-readiness.",
         formatListForSpeech("Strengths", resume.strengths),
         formatListForSpeech("Weaknesses", resume.weaknesses),
@@ -201,13 +213,32 @@ function Result() {
                 <section className="result-grid">
                     <div className="score-card">
                         <span>ATS Score</span>
-                        <h2>{resume.atsScore}/100</h2>
-                        <p>Based on resume structure, skills, projects, and clarity.</p>
+                        <h2>{hasScore ? `${resume.atsScore}/100` : "Score unavailable"}</h2>
+                        <p>Based on contact info, sections, keywords, project quality, formatting, impact, and professionalism.</p>
                         <p className="ats-score-note">
                             The ATS score is generated based on resume structure, skill relevance,
                             project quality, keyword usage, clarity, completeness, and overall role-readiness.
                         </p>
                     </div>
+
+                    {scoreBreakdownItems.length > 0 && (
+                        <div className="result-card score-breakdown-card">
+                            <h2>Score Breakdown</h2>
+                            <div className="score-breakdown-list">
+                                {scoreBreakdownItems.map(([label, value, max]) => (
+                                    <div className="score-breakdown-item" key={label}>
+                                        <div>
+                                            <span>{label}</span>
+                                            <strong>{value}/{max}</strong>
+                                        </div>
+                                        <div className="score-breakdown-meter" aria-hidden="true">
+                                            <span style={{ width: `${Math.min((Number(value) / max) * 100, 100)}%` }}></span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     <div className="result-card">
                         <h2>Strengths</h2>
@@ -235,6 +266,17 @@ function Result() {
                             ))}
                         </ul>
                     </div>
+
+                    {resume.missingKeywords?.length > 0 && (
+                        <div className="result-card">
+                            <h2>Missing Keywords</h2>
+                            <ul>
+                                {resume.missingKeywords.map((item, index) => (
+                                    <li key={index}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </section>
 
                 <section className="questions-section">

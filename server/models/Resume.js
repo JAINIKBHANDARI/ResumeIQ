@@ -31,6 +31,16 @@ const resumeSchema = new mongoose.Schema(
             type: Number
         },
 
+        scoreBreakdown: {
+            contactInformation: { type: Number, default: 0 },
+            resumeSections: { type: Number, default: 0 },
+            skillsAndKeywords: { type: Number, default: 0 },
+            experienceProjectsQuality: { type: Number, default: 0 },
+            atsFormatting: { type: Number, default: 0 },
+            quantificationImpact: { type: Number, default: 0 },
+            grammarProfessionalism: { type: Number, default: 0 }
+        },
+
         strengths: {
             type: [String],
             default: []
@@ -44,6 +54,20 @@ const resumeSchema = new mongoose.Schema(
         suggestions: {
             type: [String],
             default: []
+        },
+
+        missingKeywords: {
+            type: [String],
+            default: []
+        },
+
+        resumeHealth: {
+            sectionCompleteness: { type: String, default: "" },
+            formattingQuality: { type: String, default: "" },
+            keywordStrength: { type: String, default: "" },
+            projectImpact: { type: String, default: "" },
+            quantifiedAchievements: { type: String, default: "" },
+            contactInfoStatus: { type: String, default: "" }
         },
 
         actionPlan: {

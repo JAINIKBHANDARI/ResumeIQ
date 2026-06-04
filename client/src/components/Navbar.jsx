@@ -1,11 +1,12 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
+import { getAuthToken, logoutUser } from "../utils/auth";
 
 function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
 
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
 
     const [theme, setTheme] = useState(
         localStorage.getItem("theme") || "light"
@@ -19,9 +20,7 @@ function Navbar() {
     const isActive = (path) => location.pathname === path;
 
     const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        navigate("/");
+        logoutUser(navigate);
     };
 
     const toggleTheme = () => {
@@ -31,7 +30,7 @@ function Navbar() {
     return (
         <header className="navbar">
             <div className="nav-container">
-                <Link to={token ? "/dashboard" : "/"} className="brand">
+                <Link to={token ? "/dashboard" : "/login"} className="brand">
                    <img src="/logo.svg" alt="ResumeIQ Logo" className="brand-logo" />
                     <div>
                         <h2>ResumeIQ</h2>
@@ -83,8 +82,8 @@ function Navbar() {
                     ) : (
                         <>
                             <Link
-                                className={isActive("/") ? "active" : ""}
-                                to="/"
+                                className={isActive("/") || isActive("/login") ? "active" : ""}
+                                to="/login"
                             >
                                 Login
                             </Link>
