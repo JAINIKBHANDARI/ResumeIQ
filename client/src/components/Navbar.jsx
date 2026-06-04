@@ -1,26 +1,27 @@
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { getAuthToken, logoutUser } from "../utils/auth";
+import { useAuth } from "../context/useAuth";
+import { getStoredTheme, logoutUser, storeTheme } from "../utils/auth";
 
 function Navbar() {
     const location = useLocation();
     const navigate = useNavigate();
-
-    const token = getAuthToken();
+    const { isAuthenticated, logout } = useAuth();
 
     const [theme, setTheme] = useState(
-        localStorage.getItem("theme") || "light"
+        getStoredTheme()
     );
 
     useEffect(() => {
         document.documentElement.setAttribute("data-theme", theme);
-        localStorage.setItem("theme", theme);
+        storeTheme(theme);
     }, [theme]);
 
     const isActive = (path) => location.pathname === path;
 
-    const handleLogout = () => {
-        logoutUser(navigate);
+    const handleLogout = async () => {
+        logout();
+        await logoutUser(navigate);
     };
 
     const toggleTheme = () => {
@@ -30,7 +31,7 @@ function Navbar() {
     return (
         <header className="navbar">
             <div className="nav-container">
-                <Link to={token ? "/dashboard" : "/login"} className="brand">
+                <Link to={isAuthenticated ? "/dashboard" : "/login"} className="brand">
                    <img src="/logo.svg" alt="ResumeIQ Logo" className="brand-logo" />
                     <div>
                         <h2>ResumeIQ</h2>
@@ -39,7 +40,7 @@ function Navbar() {
                 </Link>
 
                 <nav className="nav-links">
-                    {token ? (
+                    {isAuthenticated ? (
                         <>
                             <Link
                                 className={isActive("/dashboard") ? "active" : ""}

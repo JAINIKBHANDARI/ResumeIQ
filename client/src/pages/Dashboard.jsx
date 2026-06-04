@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/useAuth";
 
 const getScoreLabel = (score = 0) => {
     if (score >= 85) return "Excellent";
@@ -108,13 +109,16 @@ function Dashboard() {
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const user = JSON.parse(localStorage.getItem("user"));
+    const { token, user } = useAuth();
 
     useEffect(() => {
         const fetchDashboardData = async () => {
-            try {
-                const token = localStorage.getItem("token");
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
+            try {
                 const response = await api.get("/resume/history", {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -130,7 +134,7 @@ function Dashboard() {
         };
 
         fetchDashboardData();
-    }, []);
+    }, [token]);
 
     const totalReports = resumes.length;
     const latestReport = resumes[0];

@@ -3,7 +3,14 @@
   <head>
     <script>
       (function () {
-        const savedTheme = localStorage.getItem("theme") || "light";
+        var savedTheme = "light";
+
+        try {
+          savedTheme = localStorage.getItem("theme") || "light";
+        } catch (error) {
+          savedTheme = "light";
+        }
+
         document.documentElement.setAttribute("data-theme", savedTheme);
       })();
     </script>

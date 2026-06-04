@@ -1,7 +1,10 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
+import AppLoader from "./components/AppLoader";
 import Navbar from "./components/Navbar";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { AuthProvider } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -13,9 +16,15 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 
-function App() {
+function AppRoutes() {
+    const { loading } = useAuth();
+
+    if (loading) {
+        return <AppLoader message="Preparing ResumeIQ..." />;
+    }
+
     return (
-        <BrowserRouter>
+        <>
             <Navbar />
 
             <Routes>
@@ -62,7 +71,17 @@ function App() {
                     }
                 />
             </Routes>
-        </BrowserRouter>
+        </>
+    );
+}
+
+function App() {
+    return (
+        <AuthProvider>
+            <BrowserRouter>
+                <AppRoutes />
+            </BrowserRouter>
+        </AuthProvider>
     );
 }
 

@@ -4,7 +4,7 @@ import { storeAuthData } from "../utils/auth";
 
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
 
-function GoogleAuthButton({ label = "Continue with Google", onSuccess, onError }) {
+function GoogleAuthButton({ label = "Continue with Google", onAuthenticated, onSuccess, onError }) {
     const buttonRef = useRef(null);
     const [ready, setReady] = useState(false);
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
@@ -15,8 +15,9 @@ function GoogleAuthButton({ label = "Continue with Google", onSuccess, onError }
         const existingScript = document.querySelector(`script[src="${GOOGLE_SCRIPT_SRC}"]`);
 
         if (window.google?.accounts?.id) {
-            setReady(true);
-            return;
+            const timer = window.setTimeout(() => setReady(true), 0);
+
+            return () => window.clearTimeout(timer);
         }
 
         const script = existingScript || document.createElement("script");
@@ -44,7 +45,11 @@ function GoogleAuthButton({ label = "Continue with Google", onSuccess, onError }
                         credential: response.credential
                     });
 
-                    storeAuthData(result.data);
+                    if (onAuthenticated) {
+                        onAuthenticated(result.data);
+                    } else {
+                        storeAuthData(result.data);
+                    }
 
                     onSuccess?.();
                 } catch (error) {
@@ -64,7 +69,7 @@ function GoogleAuthButton({ label = "Continue with Google", onSuccess, onError }
             shape: "rectangular",
             width: buttonRef.current.offsetWidth || 320
         });
-    }, [clientId, onError, onSuccess, ready]);
+    }, [clientId, onAuthenticated, onError, onSuccess, ready]);
 
     if (!clientId) {
         return (

@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api/axios";
 import GoogleAuthButton from "../components/GoogleAuthButton";
-import { storeAuthData } from "../utils/auth";
+import { useAuth } from "../context/useAuth";
 
 function Login() {
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     const [formData, setFormData] = useState({
         email: "",
@@ -30,7 +31,7 @@ function Login() {
         try {
             const response = await api.post("/auth/login", formData);
 
-            storeAuthData(response.data);
+            login(response.data);
 
             navigate("/dashboard");
         } catch (error) {
@@ -153,6 +154,7 @@ function Login() {
                     </div>
 
                     <GoogleAuthButton
+                        onAuthenticated={login}
                         onSuccess={() => navigate("/dashboard")}
                         onError={setError}
                     />

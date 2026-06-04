@@ -1,36 +1,41 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/useAuth";
 
 function History() {
     const [resumes, setResumes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [deleteLoading, setDeleteLoading] = useState("");
-
-    const fetchHistory = async () => {
-        try {
-            const token = localStorage.getItem("token");
-
-            const response = await api.get("/resume/history", {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            });
-
-            setResumes(response.data.resumes);
-        } catch (error) {
-            setError(
-                error.response?.data?.message || "Failed to fetch history"
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+    const { token } = useAuth();
 
     useEffect(() => {
+        const fetchHistory = async () => {
+            if (!token) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const response = await api.get("/resume/history", {
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+
+                setResumes(response.data.resumes);
+            } catch (error) {
+                setError(
+                    error.response?.data?.message || "Failed to fetch history"
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
         fetchHistory();
-    }, []);
+    }, [token]);
 
     const handleDelete = async (resumeId) => {
         const confirmDelete = window.confirm(
@@ -41,8 +46,6 @@ function History() {
 
         try {
             setDeleteLoading(resumeId);
-
-            const token = localStorage.getItem("token");
 
             await api.delete(`/resume/${resumeId}`, {
                 headers: {

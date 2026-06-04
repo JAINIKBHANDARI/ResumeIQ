@@ -1,10 +1,15 @@
 import { Navigate } from "react-router-dom";
-import { getAuthToken } from "../utils/auth";
+import AppLoader from "./AppLoader";
+import { useAuth } from "../context/useAuth";
 
 function ProtectedRoute({ children }) {
-    const token = getAuthToken();
+    const { loading, isAuthenticated } = useAuth();
 
-    if (!token) {
+    if (loading) {
+        return <AppLoader message="Checking your session..." />;
+    }
+
+    if (!isAuthenticated) {
         return <Navigate to="/login" replace />;
     }
 

@@ -2,9 +2,11 @@ import { downloadReportPdf } from "../utils/downloadReportPdf";
 import { useEffect, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/useAuth";
 
 function Result() {
     const { id } = useParams();
+    const { token } = useAuth();
 
     const [resume, setResume] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -16,9 +18,12 @@ function Result() {
 
     useEffect(() => {
         const fetchResult = async () => {
-            try {
-                const token = localStorage.getItem("token");
+            if (!token) {
+                setLoading(false);
+                return;
+            }
 
+            try {
                 const response = await api.get(`/resume/${id}`, {
                     headers: {
                         Authorization: `Bearer ${token}`
@@ -36,7 +41,7 @@ function Result() {
         };
 
         fetchResult();
-    }, [id]);
+    }, [id, token]);
 
     useEffect(() => {
         return () => {

@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/axios";
+import { useAuth } from "../context/useAuth";
 
 function UploadResume() {
     const navigate = useNavigate();
+    const { token } = useAuth();
 
     const [file, setFile] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -21,8 +23,6 @@ function UploadResume() {
             setError("Please select a resume PDF first");
             return;
         }
-
-        const token = localStorage.getItem("token");
 
         if (!token) {
             setError("Please login first");
