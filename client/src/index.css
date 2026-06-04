@@ -1391,6 +1391,10 @@
     grid-column: span 2;
 }
 
+.resume-health-result-card {
+    grid-column: span 3;
+}
+
 .score-breakdown-list {
     display: grid;
     gap: 14px;
@@ -2194,6 +2198,10 @@ body {
     }
 
     .score-breakdown-card {
+        grid-column: auto;
+    }
+
+    .resume-health-result-card {
         grid-column: auto;
     }
 

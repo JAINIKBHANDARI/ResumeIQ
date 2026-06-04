@@ -23,6 +23,14 @@ export const downloadReportPdf = (resume) => {
         ["Quantification and Impact", resume.scoreBreakdown?.quantificationImpact, 10],
         ["Grammar and Professionalism", resume.scoreBreakdown?.grammarProfessionalism, 10]
     ].filter(([, value]) => Number.isFinite(Number(value)));
+    const resumeHealthItems = [
+        ["Section Completeness", resume.resumeHealth?.sectionCompleteness],
+        ["Formatting Quality", resume.resumeHealth?.formattingQuality],
+        ["Keyword Strength", resume.resumeHealth?.keywordStrength],
+        ["Project Impact", resume.resumeHealth?.projectImpact],
+        ["Quantified Achievements", resume.resumeHealth?.quantifiedAchievements],
+        ["Contact Info Status", resume.resumeHealth?.contactInfoStatus]
+    ].filter(([, value]) => value);
 
     const addPageIfNeeded = (requiredHeight = 10) => {
         if (y + requiredHeight > pageHeight - bottomMargin) {
@@ -122,6 +130,19 @@ export const downloadReportPdf = (resume) => {
 
     addSectionTitle("Suggestions");
     addList(resume.suggestions);
+
+    if (resumeHealthItems.length > 0) {
+        addSectionTitle("Resume Health Analysis");
+        resumeHealthItems.forEach(([label, value]) => {
+            addWrappedText(`- ${label}: ${value}`, {
+                lineHeight: 5.8,
+                indent: 2,
+                gapAfter: 1
+            });
+        });
+
+        y += 3;
+    }
 
     addSectionTitle("Technical Questions");
     addList(resume.interviewQuestions?.technical);

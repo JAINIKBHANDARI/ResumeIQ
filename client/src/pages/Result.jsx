@@ -57,6 +57,15 @@ function Result() {
         ["Grammar and Professionalism", resume?.scoreBreakdown?.grammarProfessionalism, 10]
     ].filter(([, value]) => Number.isFinite(Number(value)));
 
+    const resumeHealthItems = [
+        ["Section Completeness", resume?.resumeHealth?.sectionCompleteness],
+        ["Formatting Quality", resume?.resumeHealth?.formattingQuality],
+        ["Keyword Strength", resume?.resumeHealth?.keywordStrength],
+        ["Project Impact", resume?.resumeHealth?.projectImpact],
+        ["Quantified Achievements", resume?.resumeHealth?.quantifiedAchievements],
+        ["Contact Info Status", resume?.resumeHealth?.contactInfoStatus]
+    ].filter(([, value]) => value);
+
     const formatListForSpeech = (title, items = []) => {
         if (!items.length) return `${title}: No data available.`;
 
@@ -273,6 +282,19 @@ function Result() {
                             <ul>
                                 {resume.missingKeywords.map((item, index) => (
                                     <li key={index}>{item}</li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {resumeHealthItems.length > 0 && (
+                        <div className="result-card resume-health-result-card">
+                            <h2>Resume Health Analysis</h2>
+                            <ul>
+                                {resumeHealthItems.map(([label, value]) => (
+                                    <li key={label}>
+                                        <strong>{label}:</strong> {value}
+                                    </li>
                                 ))}
                             </ul>
                         </div>

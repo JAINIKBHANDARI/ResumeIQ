@@ -27,13 +27,77 @@ const getWordCount = (text) => {
 };
 
 const buildResumeHealth = (breakdown) => ({
-    sectionCompleteness: breakdown.resumeSections >= 12 ? "Good" : breakdown.resumeSections >= 8 ? "Average" : "Weak",
-    formattingQuality: breakdown.atsFormatting >= 12 ? "Good" : breakdown.atsFormatting >= 8 ? "Average" : "Needs Improvement",
-    keywordStrength: breakdown.skillsAndKeywords >= 16 ? "Good" : breakdown.skillsAndKeywords >= 10 ? "Average" : "Weak",
-    projectImpact: breakdown.experienceProjectsQuality >= 16 ? "Good" : breakdown.experienceProjectsQuality >= 10 ? "Average" : "Needs Improvement",
-    quantifiedAchievements: breakdown.quantificationImpact >= 8 ? "Good" : breakdown.quantificationImpact >= 4 ? "Average" : "Weak",
-    contactInfoStatus: breakdown.contactInformation >= 8 ? "Good" : breakdown.contactInformation >= 5 ? "Average" : "Weak"
+    sectionCompleteness: breakdown.resumeSections >= 12
+        ? "The resume includes the major sections recruiters expect, such as education, skills, and project or experience details. Keeping these sections clearly labeled helps ATS systems parse the profile correctly."
+        : breakdown.resumeSections >= 8
+            ? "The resume has some important sections, but one or more areas need clearer headings or more complete content. Adding distinct sections for skills, projects or experience, education, and achievements will make the profile easier to review."
+            : "The resume is missing several core sections or does not present them clearly. A stronger structure with separate headings for summary, skills, projects or experience, education, and contact details is needed before the resume will feel complete.",
+    formattingQuality: breakdown.atsFormatting >= 12
+        ? "The formatting appears mostly ATS-friendly because the content is readable and organized. Continue using simple headings, consistent bullets, and text-based formatting instead of tables or image-heavy layouts."
+        : breakdown.atsFormatting >= 8
+            ? "The formatting is usable, but it can be cleaner and more consistent. Improve spacing, bullet alignment, and section hierarchy so recruiters can scan the resume quickly."
+            : "The formatting needs improvement for ATS readability and recruiter scanning. Use a simple one-column layout, clear section titles, consistent bullets, and avoid decorative elements that may not parse well.",
+    keywordStrength: breakdown.skillsAndKeywords >= 16
+        ? "The resume contains a strong set of role-relevant skills and keywords. To improve further, connect those skills directly to project or experience bullets so recruiters can see evidence of usage."
+        : breakdown.skillsAndKeywords >= 10
+            ? "The resume includes some relevant keywords, but the skill coverage is not yet strong enough for competitive screening. Add tools, frameworks, databases, APIs, and role-specific terms that match target job descriptions."
+            : "The resume is weak on role-specific keywords, which can reduce ATS matching. Add a focused technical skills section and repeat important technologies naturally inside project or experience descriptions.",
+    projectImpact: breakdown.experienceProjectsQuality >= 16
+        ? "The project or experience section shows meaningful technical work and gives recruiters useful evidence of ability. Keep emphasizing your individual contribution, the tech stack, and the outcome of each project."
+        : breakdown.experienceProjectsQuality >= 10
+            ? "The project or experience section has useful content, but it needs clearer technical depth. Each project should explain what you built, which APIs or database logic you handled, and what result the work produced."
+            : "The project or experience section does not yet show enough technical contribution. Add bullets that describe architecture, features built, database usage, authentication flow, integrations, deployment, and measurable results."
+    ,
+    quantifiedAchievements: breakdown.quantificationImpact >= 8
+        ? "The resume uses measurable results well, which helps recruiters understand impact. Keep using numbers such as users, performance gains, reduced time, accuracy, scale, or project outcomes wherever truthful."
+        : breakdown.quantificationImpact >= 4
+            ? "The resume includes a few measurable details, but impact is still underdeveloped. Add numbers to show scale, performance, efficiency, users, marks, rankings, or before-and-after improvements."
+            : "The resume has little measurable impact, so achievements may feel like task descriptions. Add quantified outcomes wherever possible, such as performance improvement, number of users, APIs built, pages created, or time saved.",
+    contactInfoStatus: breakdown.contactInformation >= 8
+        ? "The contact information is mostly complete and should allow recruiters to reach or verify the candidate easily. Keep email, phone, LinkedIn, GitHub, and portfolio links visible near the top."
+        : breakdown.contactInformation >= 5
+            ? "The contact information is partially complete, but it should be easier for recruiters to verify the profile. Add missing links such as LinkedIn, GitHub, portfolio, or a clean phone/email line near the header."
+            : "The resume does not provide enough clear contact information. Add a professional email, phone number, LinkedIn, GitHub, and portfolio link so recruiters and ATS systems can identify the candidate."
 });
+
+const normalizeFeedbackItem = (item) => {
+    if (!item) return "";
+
+    if (typeof item === "string") return item.trim();
+
+    if (typeof item === "object") {
+        const title = typeof item.title === "string" ? item.title.trim() : "";
+        const description = typeof item.description === "string" ? item.description.trim() : "";
+
+        if (title && description) return `${title}: ${description}`;
+        if (description) return description;
+        if (title) return title;
+    }
+
+    return "";
+};
+
+const normalizeFeedbackList = (items = [], fallback = []) => {
+    const sourceItems = Array.isArray(items) ? items : fallback;
+
+    return sourceItems
+        .map(normalizeFeedbackItem)
+        .filter(Boolean);
+};
+
+const normalizeResumeHealth = (resumeHealth, breakdown) => {
+    const fallbackHealth = buildResumeHealth(breakdown);
+
+    if (!resumeHealth || typeof resumeHealth !== "object") return fallbackHealth;
+
+    return Object.keys(fallbackHealth).reduce((result, key) => {
+        result[key] = typeof resumeHealth[key] === "string" && resumeHealth[key].trim()
+            ? resumeHealth[key].trim()
+            : fallbackHealth[key];
+
+        return result;
+    }, {});
+};
 
 const calculateScoreFromBreakdown = (scoreBreakdown = {}) => {
     const normalizedBreakdown = Object.keys(SCORE_LIMITS).reduce((result, key) => {
@@ -138,20 +202,34 @@ const deterministicFallbackScore = (resumeText = "") => {
         atsScore,
         scoreBreakdown,
         strengths: [
-            contactInformation >= 7 ? "Contact information is reasonably complete." : "Resume includes some identifiable profile details.",
-            resumeSections >= 10 ? "Core resume sections are present." : "Resume has a starting structure for analysis.",
-            skillsAndKeywords >= 10 ? "Relevant skills and keywords are visible." : "Some resume content is available for improvement."
+            contactInformation >= 7
+                ? "The resume includes enough contact information for a recruiter to identify and reach the candidate. This improves basic ATS completeness and makes profile verification easier."
+                : "The resume includes some identifiable profile details, but the contact section is not strong enough yet. Add a professional email, phone number, LinkedIn, GitHub, or portfolio link near the top.",
+            resumeSections >= 10
+                ? "The resume contains core sections such as education, skills, and project or experience information. Clear section coverage helps both ATS parsing and recruiter scanning."
+                : "The resume has a starting structure, but several sections need clearer headings and fuller content. A fresher resume should clearly separate skills, education, projects, achievements, and contact details.",
+            skillsAndKeywords >= 10
+                ? "The resume includes relevant technical keywords that can support ATS matching. These skills should also be reflected inside project bullets to prove hands-on usage."
+                : "The resume has some content available for improvement, but the keyword coverage is still weak. Add role-specific technologies, tools, frameworks, databases, and development concepts from target job descriptions."
         ],
         weaknesses: [
-            quantificationImpact < 6 ? "Add measurable outcomes and metrics to improve impact." : "Keep quantified outcomes consistent across projects.",
-            experienceProjectsQuality < 12 ? "Project or experience descriptions need clearer technical contribution." : "Project details can be made more concise and targeted.",
-            atsFormatting < 10 ? "Improve readability with simple headings and bullet points." : "Formatting is acceptable but can be further polished."
+            quantificationImpact < 6
+                ? "The resume does not show enough measurable outcomes, so the work may read like a list of tasks. Add numbers such as users, APIs built, performance gains, reduced time, accuracy, or project scale wherever truthful."
+                : "The resume includes some impact, but quantified outcomes should stay consistent across the strongest projects. Recruiters respond better when every major project shows scale, result, or measurable contribution.",
+            experienceProjectsQuality < 12
+                ? "Project or experience descriptions need clearer technical contribution. Explain the features built, APIs developed, database usage, authentication flow, deployment, and the candidate's individual ownership."
+                : "Project details are useful, but they can be more targeted toward the role. Trim generic wording and emphasize the tech stack, business problem, implementation choices, and outcome.",
+            atsFormatting < 10
+                ? "The resume formatting needs better readability through simple headings and consistent bullet points. ATS systems and recruiters perform better with clean text-based layouts instead of crowded or decorative formatting."
+                : "Formatting is acceptable, but spacing, hierarchy, and bullet consistency can still be polished. A cleaner scan path helps recruiters find skills, projects, and education faster."
         ],
         missingKeywords: keywordMatches < 6 ? ["role-specific technical keywords", "tools/frameworks", "impact metrics"] : [],
         improvementSuggestions: [
-            "Add role-specific keywords from target job descriptions.",
-            "Use action verbs and quantify project outcomes.",
-            "Keep sections clear: Summary, Skills, Projects/Experience, Education."
+            "Add role-specific keywords: The resume needs stronger alignment with target job descriptions. Add relevant technologies, frameworks, databases, APIs, and role terms naturally in the skills and project sections.",
+            "Strengthen project bullets: Some project descriptions do not clearly explain the candidate's technical ownership. Rewrite each bullet to show what was built, how it was implemented, and what result it created.",
+            "Quantify outcomes: The resume needs more measurable impact to stand out. Add truthful numbers such as users, response time improvement, features delivered, pages built, APIs created, or time saved.",
+            "Clarify resume sections: Recruiters should be able to scan the resume quickly. Use clear headings such as Summary, Skills, Projects, Experience, Education, Certifications, and Achievements.",
+            "Use stronger action verbs: Several bullets can become more professional with active wording. Start bullets with verbs such as developed, implemented, optimized, integrated, deployed, automated, or improved."
         ],
         actionPlan: {
             priorityFixes: [
@@ -201,38 +279,32 @@ const validateAnalysis = (analysis, resumeText) => {
     return {
         atsScore,
         scoreBreakdown,
-        strengths: Array.isArray(analysis.strengths) ? analysis.strengths : [],
-        weaknesses: Array.isArray(analysis.weaknesses) ? analysis.weaknesses : [],
-        missingKeywords: Array.isArray(analysis.missingKeywords) ? analysis.missingKeywords : [],
-        improvementSuggestions: Array.isArray(analysis.improvementSuggestions)
-            ? analysis.improvementSuggestions
-            : Array.isArray(analysis.suggestions)
-                ? analysis.suggestions
-                : [],
+        strengths: normalizeFeedbackList(analysis.strengths),
+        weaknesses: normalizeFeedbackList(analysis.weaknesses),
+        missingKeywords: normalizeFeedbackList(analysis.missingKeywords),
+        improvementSuggestions: normalizeFeedbackList(
+            analysis.improvementSuggestions,
+            Array.isArray(analysis.suggestions) ? analysis.suggestions : []
+        ),
         actionPlan: {
-            priorityFixes: Array.isArray(analysis.actionPlan?.priorityFixes)
-                ? analysis.actionPlan.priorityFixes
-                : [],
-            keywordSuggestions: Array.isArray(analysis.actionPlan?.keywordSuggestions)
-                ? analysis.actionPlan.keywordSuggestions
-                : Array.isArray(analysis.missingKeywords)
-                    ? analysis.missingKeywords
-                    : [],
-            projectImprovements: Array.isArray(analysis.actionPlan?.projectImprovements)
-                ? analysis.actionPlan.projectImprovements
-                : [],
+            priorityFixes: normalizeFeedbackList(analysis.actionPlan?.priorityFixes),
+            keywordSuggestions: normalizeFeedbackList(
+                analysis.actionPlan?.keywordSuggestions,
+                Array.isArray(analysis.missingKeywords) ? analysis.missingKeywords : []
+            ),
+            projectImprovements: normalizeFeedbackList(analysis.actionPlan?.projectImprovements),
             estimatedImprovement: analysis.actionPlan?.estimatedImprovement || ""
         },
-        resumeHealth: analysis.resumeHealth && typeof analysis.resumeHealth === "object"
-            ? analysis.resumeHealth
-            : buildResumeHealth(scoreBreakdown),
+        resumeHealth: normalizeResumeHealth(analysis.resumeHealth, scoreBreakdown),
         interviewQuestions: {
             technical: Array.isArray(analysis.interviewQuestions?.technical)
                 ? analysis.interviewQuestions.technical
                 : [],
             project: Array.isArray(analysis.interviewQuestions?.project)
                 ? analysis.interviewQuestions.project
-                : [],
+                : Array.isArray(analysis.interviewQuestions?.projectBased)
+                    ? analysis.interviewQuestions.projectBased
+                    : [],
             hr: Array.isArray(analysis.interviewQuestions?.hr)
                 ? analysis.interviewQuestions.hr
                 : []

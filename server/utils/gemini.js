@@ -9,12 +9,13 @@ const ai = new GoogleGenAI({
 });
 
 const buildPrompt = (resumeText) => `
-You are ResumeIQ's strict ATS resume evaluator.
+You are ResumeIQ's strict ATS resume evaluator and recruiter-style resume coach for students, freshers, and early-career developers.
 
 Analyze the resume text using this 100-point rubric. Do not cluster around any default score.
 Weak or incomplete resumes should score 30-50. Average student resumes should score 55-70.
 Good resumes should score 75-85. Excellent resumes should score 85-95.
 Do not score above 90 unless the resume has strong evidence, complete sections, measurable impact, and polished formatting.
+Be strict but helpful. Do not overpraise weak resumes. Mention specific resume sections, skills, projects, tools, or missing evidence when the resume text supports it.
 
 Rubric:
 1. contactInformation: 0-10
@@ -75,14 +76,19 @@ Return JSON only with this exact shape:
   "strengths": [],
   "weaknesses": [],
   "missingKeywords": [],
-  "improvementSuggestions": [],
+  "improvementSuggestions": [
+    {
+      "title": "",
+      "description": ""
+    }
+  ],
   "resumeHealth": {
-    "sectionCompleteness": "Good | Average | Weak",
-    "formattingQuality": "Good | Average | Needs Improvement",
-    "keywordStrength": "Good | Average | Weak",
-    "projectImpact": "Good | Average | Needs Improvement",
-    "quantifiedAchievements": "Good | Average | Weak",
-    "contactInfoStatus": "Good | Average | Weak"
+    "sectionCompleteness": "",
+    "formattingQuality": "",
+    "keywordStrength": "",
+    "projectImpact": "",
+    "quantifiedAchievements": "",
+    "contactInfoStatus": ""
   },
   "interviewQuestions": {
     "technical": [],
@@ -96,8 +102,16 @@ Rules:
 - atsScore must equal the sum of scoreBreakdown categories.
 - Never use a default score.
 - If evidence is missing, give low category scores.
-- Include 3-5 strengths, 3-5 weaknesses, 3-6 missingKeywords, 3-5 improvementSuggestions.
+- Include 3-5 strengths, 3-5 weaknesses, 3-6 missingKeywords, and 5-7 improvementSuggestions.
 - Include exactly 5 technical, 5 project, and 5 HR interview questions.
+- Every strength and weakness must be 1-2 full sentences. Avoid short generic lines such as "Skills are present" or "Projects can improve".
+- Strengths should explain what is good and why it helps ATS/recruiter review. Example style: "The resume includes relevant technical skills such as React.js, Node.js, and MongoDB, which align well with full-stack development roles."
+- Weaknesses should explain what is missing or weak and why it lowers the resume quality. Example style: "Project descriptions should include clearer technical contributions, APIs developed, database usage, authentication flow, and measurable impact."
+- Each improvementSuggestions item must have a short title and a 1-2 sentence description explaining what is wrong, why it matters, and how to improve it.
+- Resume health fields must be descriptive 1-2 sentence explanations, not only labels such as "Good" or "Weak".
+- Missing keywords should be specific skills, tools, role keywords, or resume sections that would improve the user's target fit. Do not invent advanced tools if the resume does not suggest that path.
+- Interview questions should be practical and based on the user's resume content when possible. Project questions should ask about architecture, APIs, database design, authentication, trade-offs, measurable outcomes, and ownership.
+- Keep feedback detailed but readable. Do not write long essays.
 
 Resume Text:
 ${resumeText}
