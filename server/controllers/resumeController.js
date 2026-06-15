@@ -2,6 +2,27 @@ const { PDFParse } = require("pdf-parse");
 const Resume = require("../models/Resume");
 const analyzeResumeWithAI = require("../utils/gemini");
 
+const JOB_DESCRIPTION_LIMIT = 8000;
+
+const sanitizeOptionalText = (value, limit = 120) => {
+    if (typeof value !== "string") return "";
+
+    return value.replace(/\s+/g, " ").trim().slice(0, limit);
+};
+
+const getJobMatchInput = (body = {}) => {
+    const selectedRole = sanitizeOptionalText(body.targetRole);
+    const customRole = sanitizeOptionalText(body.customRole);
+    const targetRole = customRole
+        || (/other\s*\/?\s*custom/i.test(selectedRole) ? "" : selectedRole);
+    const jobDescription = sanitizeOptionalText(body.jobDescription, JOB_DESCRIPTION_LIMIT);
+
+    return {
+        targetRole,
+        jobDescription
+    };
+};
+
 // Upload Resume, Extract Text, Analyze with AI, and Generate Questions
 const uploadResume = async (req, res) => {
     try {
@@ -30,7 +51,8 @@ const uploadResume = async (req, res) => {
             });
         }
 
-        const aiAnalysis = await analyzeResumeWithAI(extractedText);
+        const jobMatchInput = getJobMatchInput(req.body);
+        const aiAnalysis = await analyzeResumeWithAI(extractedText, jobMatchInput);
 
         const resume = await Resume.create({
             filename: req.file.filename,
@@ -46,7 +68,8 @@ const uploadResume = async (req, res) => {
             missingKeywords: aiAnalysis.missingKeywords,
             resumeHealth: aiAnalysis.resumeHealth,
             actionPlan: aiAnalysis.actionPlan,
-            interviewQuestions: aiAnalysis.interviewQuestions
+            interviewQuestions: aiAnalysis.interviewQuestions,
+            ...(aiAnalysis.jobMatchAnalysis ? { jobMatchAnalysis: aiAnalysis.jobMatchAnalysis } : {})
         });
 
         res.status(201).json({
@@ -65,7 +88,8 @@ const uploadResume = async (req, res) => {
                 missingKeywords: resume.missingKeywords,
                 resumeHealth: resume.resumeHealth,
                 actionPlan: resume.actionPlan,
-                interviewQuestions: resume.interviewQuestions
+                interviewQuestions: resume.interviewQuestions,
+                ...(resume.jobMatchAnalysis ? { jobMatchAnalysis: resume.jobMatchAnalysis } : {})
             }
         });
 

@@ -1,5 +1,48 @@
 const mongoose = require("mongoose");
 
+const jobMatchAnalysisSchema = new mongoose.Schema(
+    {
+        targetRole: {
+            type: String
+        },
+        jobDescriptionProvided: {
+            type: Boolean
+        },
+        matchScore: {
+            type: Number
+        },
+        matchedSkills: {
+            type: [String],
+            default: undefined
+        },
+        missingSkills: {
+            type: [String],
+            default: undefined
+        },
+        missingKeywords: {
+            type: [String],
+            default: undefined
+        },
+        roleSpecificSuggestions: {
+            type: [String],
+            default: undefined
+        },
+        resumeRewriteTips: {
+            type: [String],
+            default: undefined
+        },
+        readinessLevel: {
+            type: String
+        },
+        summary: {
+            type: String
+        }
+    },
+    {
+        _id: false
+    }
+);
+
 const resumeSchema = new mongoose.Schema(
     {
         filename: {
@@ -89,6 +132,10 @@ const resumeSchema = new mongoose.Schema(
                 type: [String],
                 default: []
             }
+        },
+        jobMatchAnalysis: {
+            type: jobMatchAnalysisSchema,
+            default: undefined
         }
     },
     {

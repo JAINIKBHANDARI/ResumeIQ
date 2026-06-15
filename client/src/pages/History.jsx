@@ -113,6 +113,12 @@ function History() {
                                 <p>
                                     ATS Score: <strong>{resume.atsScore}/100</strong>
                                 </p>
+
+                                {resume.jobMatchAnalysis && Number.isFinite(Number(resume.jobMatchAnalysis.matchScore)) && (
+                                    <p>
+                                        Job Match: <strong>{resume.jobMatchAnalysis.matchScore}/100</strong>
+                                    </p>
+                                )}
                             </div>
 
                             <div className="history-actions">

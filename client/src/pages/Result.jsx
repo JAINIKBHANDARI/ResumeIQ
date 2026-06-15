@@ -57,8 +57,8 @@ function Result() {
         ["Resume Sections", resume?.scoreBreakdown?.resumeSections, 15],
         ["Skills and Keywords", resume?.scoreBreakdown?.skillsAndKeywords, 20],
         ["Experience/Projects Quality", resume?.scoreBreakdown?.experienceProjectsQuality, 20],
-        ["ATS Formatting", resume?.scoreBreakdown?.atsFormatting, 15],
-        ["Quantification and Impact", resume?.scoreBreakdown?.quantificationImpact, 10],
+        ["ATS Formatting", resume?.scoreBreakdown?.atsFormatting, 10],
+        ["Quantification and Impact", resume?.scoreBreakdown?.quantificationImpact, 15],
         ["Grammar and Professionalism", resume?.scoreBreakdown?.grammarProfessionalism, 10]
     ].filter(([, value]) => Number.isFinite(Number(value)));
 
@@ -70,11 +70,46 @@ function Result() {
         ["Quantified Achievements", resume?.resumeHealth?.quantifiedAchievements],
         ["Contact Info Status", resume?.resumeHealth?.contactInfoStatus]
     ].filter(([, value]) => value);
+    const jobMatchAnalysis = resume?.jobMatchAnalysis;
+    const hasJobMatchAnalysis = Boolean(jobMatchAnalysis);
+    const jobMatchScore = Number(jobMatchAnalysis?.matchScore);
+    const hasJobMatchScore = Number.isFinite(jobMatchScore);
+
+    const renderListItems = (items = []) => {
+        const normalizedItems = Array.isArray(items) ? items : [];
+
+        if (!normalizedItems.length) return <li>No data available.</li>;
+
+        return normalizedItems.map((item, index) => (
+            <li key={index}>{item}</li>
+        ));
+    };
 
     const formatListForSpeech = (title, items = []) => {
-        if (!items.length) return `${title}: No data available.`;
+        const normalizedItems = Array.isArray(items) ? items : [];
 
-        return `${title}: ${items.join(". ")}.`;
+        if (!normalizedItems.length) return `${title}: No data available.`;
+
+        return `${title}: ${normalizedItems.join(". ")}.`;
+    };
+
+    const getJobMatchSpeechText = () => {
+        if (!hasJobMatchAnalysis) return "";
+
+        return [
+            "Job Match Analyzer.",
+            hasJobMatchScore
+                ? `Match Score: ${jobMatchScore} out of 100.`
+                : "Match Score is unavailable.",
+            jobMatchAnalysis.targetRole ? `Target Role: ${jobMatchAnalysis.targetRole}.` : "",
+            jobMatchAnalysis.readinessLevel ? `Readiness Level: ${jobMatchAnalysis.readinessLevel}.` : "",
+            jobMatchAnalysis.summary ? `Summary: ${jobMatchAnalysis.summary}.` : "",
+            formatListForSpeech("Matched Skills", jobMatchAnalysis.matchedSkills),
+            formatListForSpeech("Missing Skills", jobMatchAnalysis.missingSkills),
+            formatListForSpeech("Missing Keywords", jobMatchAnalysis.missingKeywords),
+            formatListForSpeech("Role-specific Suggestions", jobMatchAnalysis.roleSpecificSuggestions),
+            formatListForSpeech("Resume Rewrite Tips", jobMatchAnalysis.resumeRewriteTips)
+        ].filter(Boolean).join(" ");
     };
 
     const getReportSpeechText = () => [
@@ -86,7 +121,8 @@ function Result() {
         formatListForSpeech("Suggestions", resume.suggestions),
         formatListForSpeech("Technical Questions", resume.interviewQuestions?.technical),
         formatListForSpeech("Project Based Questions", resume.interviewQuestions?.project),
-        formatListForSpeech("HR Questions", resume.interviewQuestions?.hr)
+        formatListForSpeech("HR Questions", resume.interviewQuestions?.hr),
+        getJobMatchSpeechText()
     ].join(" ");
 
     const splitSpeechText = (text) => {
@@ -305,6 +341,64 @@ function Result() {
                         </div>
                     )}
                 </section>
+
+                {hasJobMatchAnalysis && (
+                    <section className="job-match-section">
+                        <div className="section-title-row job-match-title-row">
+                            <div>
+                                <div className="eyebrow">Role Fit Analysis</div>
+                                <h2>Job Match Analyzer</h2>
+                            </div>
+                        </div>
+
+                        <div className="job-match-grid">
+                            <div className="score-card job-match-score-card">
+                                <span>Match Score</span>
+                                <h2>{hasJobMatchScore ? `${jobMatchScore}/100` : "Unavailable"}</h2>
+                                <p>
+                                    {jobMatchAnalysis.targetRole
+                                        ? `Target Role: ${jobMatchAnalysis.targetRole}`
+                                        : "Target role was inferred from the provided context."}
+                                </p>
+                                <p className="ats-score-note">
+                                    Job description provided: {jobMatchAnalysis.jobDescriptionProvided ? "Yes" : "No"}
+                                </p>
+                            </div>
+
+                            <div className="result-card job-match-summary-card">
+                                <h3>Readiness Level</h3>
+                                <p>{jobMatchAnalysis.readinessLevel || "No readiness level available."}</p>
+                                <h3>Summary</h3>
+                                <p>{jobMatchAnalysis.summary || "No summary available."}</p>
+                            </div>
+
+                            <div className="result-card">
+                                <h3>Matched Skills</h3>
+                                <ul>{renderListItems(jobMatchAnalysis.matchedSkills)}</ul>
+                            </div>
+
+                            <div className="result-card">
+                                <h3>Missing Skills</h3>
+                                <ul>{renderListItems(jobMatchAnalysis.missingSkills)}</ul>
+                            </div>
+
+                            <div className="result-card">
+                                <h3>Missing Keywords</h3>
+                                <ul>{renderListItems(jobMatchAnalysis.missingKeywords)}</ul>
+                            </div>
+
+                            <div className="result-card">
+                                <h3>Role-specific Suggestions</h3>
+                                <ul>{renderListItems(jobMatchAnalysis.roleSpecificSuggestions)}</ul>
+                            </div>
+
+                            <div className="result-card job-match-wide-card">
+                                <h3>Resume Rewrite Tips</h3>
+                                <ul>{renderListItems(jobMatchAnalysis.resumeRewriteTips)}</ul>
+                            </div>
+                        </div>
+                    </section>
+                )}
 
                 <section className="questions-section">
                     <h2>Interview Questions</h2>

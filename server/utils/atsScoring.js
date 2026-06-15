@@ -3,8 +3,8 @@ const SCORE_LIMITS = {
     resumeSections: 15,
     skillsAndKeywords: 20,
     experienceProjectsQuality: 20,
-    atsFormatting: 15,
-    quantificationImpact: 10,
+    atsFormatting: 10,
+    quantificationImpact: 15,
     grammarProfessionalism: 10
 };
 
@@ -26,15 +26,107 @@ const getWordCount = (text) => {
     return text.trim().split(/\s+/).filter(Boolean).length;
 };
 
+const normalizeSearchText = (text = "") => (
+    String(text)
+        .toLowerCase()
+        .replace(/[^a-z0-9+#.\s/-]/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+);
+
+const uniqueList = (items = []) => (
+    [...new Set(items.map((item) => String(item || "").trim()).filter(Boolean))]
+);
+
+const KEYWORD_ALIASES = {
+    "Basic Programming": ["programming", "coding", "c language", "c++", "java", "python", "javascript"],
+    "Problem Solving": ["problem solving", "problem-solving", "debugging", "troubleshooting"],
+    "Responsive Design": ["responsive design", "mobile responsive", "media query", "responsive ui"],
+    "API Integration": ["api integration", "integrated api", "fetch api", "axios", "rest api"],
+    "REST API": ["rest api", "restful", "api", "apis"],
+    "Node.js": ["node.js", "node js", "node"],
+    "Express.js": ["express.js", "express js", "express"],
+    "MongoDB": ["mongodb", "mongo db"],
+    "GitHub": ["github", "git hub"],
+    "JWT": ["jwt", "json web token"],
+    "Authentication": ["authentication", "auth", "login", "signup", "authorization"],
+    "Spring Boot": ["spring boot", "springboot"],
+    "Power BI": ["power bi", "powerbi"],
+    "Scikit-learn": ["scikit-learn", "scikit learn", "sklearn"],
+    "Machine Learning": ["machine learning", "ml"],
+    "Data Preprocessing": ["data preprocessing", "preprocessing"],
+    "Model Training": ["model training", "trained model"],
+    "Threat Analysis": ["threat analysis", "threat detection"],
+    "OWASP": ["owasp", "owasp top 10"],
+    "File Handling": ["file handling", "files"],
+    "Data Structures": ["data structures", "dsa"],
+    "Exception Handling": ["exception handling", "exceptions"],
+    "JDBC": ["jdbc"],
+    "DBMS": ["dbms", "database management"],
+    "OOP": ["oop", "object oriented", "object-oriented"],
+    "UI": ["ui", "user interface"],
+    "Deployment": ["deployment", "deployed", "hosting", "vercel", "render", "netlify"],
+    "Database": ["database", "db", "mongodb", "sql", "mysql", "postgresql"],
+    "Security": ["security", "secure", "vulnerability"]
+};
+
+const keywordMatchesText = (text, keyword) => {
+    const normalizedText = normalizeSearchText(text);
+    const aliases = uniqueList([keyword, ...(KEYWORD_ALIASES[keyword] || [])]);
+
+    return aliases.some((alias) => {
+        const normalizedAlias = normalizeSearchText(alias);
+
+        if (!normalizedAlias) return false;
+
+        return normalizedText.includes(normalizedAlias);
+    });
+};
+
+const countKeywordMatches = (text, keywords = []) => (
+    uniqueList(keywords).filter((keyword) => keywordMatchesText(text, keyword)).length
+);
+
+const ROLE_SKILL_MAP = {
+    "general fresher": ["Communication", "Problem Solving", "Teamwork", "Projects", "Internship", "Git", "Basic Programming", "Database", "OOP"],
+    "frontend developer": ["HTML", "CSS", "JavaScript", "React", "Responsive Design", "API Integration", "Git", "GitHub", "UI", "Deployment"],
+    "backend developer": ["Node.js", "Express.js", "REST API", "Database", "MongoDB", "SQL", "Authentication", "JWT", "Security", "Deployment"],
+    "mern developer": ["HTML", "CSS", "JavaScript", "React", "Node.js", "Express.js", "MongoDB", "REST API", "JWT", "Authentication", "Git", "GitHub", "Deployment"],
+    "java developer": ["Java", "OOP", "Collections", "Exception Handling", "JDBC", "SQL", "DBMS", "Spring Boot", "REST API", "Git"],
+    "python developer": ["Python", "OOP", "File Handling", "APIs", "Flask", "Django", "SQL", "Data Structures", "Git"],
+    "data analyst": ["Python", "SQL", "Excel", "Power BI", "Pandas", "NumPy", "Data Cleaning", "Visualization", "Statistics"],
+    "ai/ml intern": ["Python", "Machine Learning", "Pandas", "NumPy", "Scikit-learn", "Data Preprocessing", "Model Training", "Evaluation"],
+    "cyber security": ["Networking", "Linux", "Security", "Vulnerability", "OWASP", "Cryptography", "Firewall", "Threat Analysis"]
+};
+
+const TECHNICAL_KEYWORDS = uniqueList([
+    "HTML", "CSS", "JavaScript", "TypeScript", "React", "Redux", "Tailwind", "Node.js", "Express.js",
+    "MongoDB", "SQL", "MySQL", "PostgreSQL", "REST API", "APIs", "Authentication", "JWT", "Git",
+    "GitHub", "Deployment", "Docker", "AWS", "Java", "Spring Boot", "Python", "Django", "Flask",
+    "Pandas", "NumPy", "Scikit-learn", "Machine Learning", "Data Analysis", "Power BI", "Excel",
+    "Testing", "Linux", "OWASP", "Security", "Database", "OOP", "Data Structures"
+]);
+
+const IMPLEMENTATION_KEYWORDS = [
+    "REST API", "APIs", "Database", "MongoDB", "SQL", "Authentication", "JWT",
+    "Deployment", "Testing", "Security", "Docker", "Cloud"
+];
+
+const ACTION_VERBS = [
+    "built", "created", "developed", "designed", "implemented", "optimized",
+    "improved", "deployed", "integrated", "led", "managed", "automated",
+    "analyzed", "tested", "collaborated", "configured"
+];
+
 const buildResumeHealth = (breakdown) => ({
     sectionCompleteness: breakdown.resumeSections >= 12
         ? "The resume includes the major sections recruiters expect, such as education, skills, and project or experience details. Keeping these sections clearly labeled helps ATS systems parse the profile correctly."
         : breakdown.resumeSections >= 8
             ? "The resume has some important sections, but one or more areas need clearer headings or more complete content. Adding distinct sections for skills, projects or experience, education, and achievements will make the profile easier to review."
             : "The resume is missing several core sections or does not present them clearly. A stronger structure with separate headings for summary, skills, projects or experience, education, and contact details is needed before the resume will feel complete.",
-    formattingQuality: breakdown.atsFormatting >= 12
+    formattingQuality: breakdown.atsFormatting >= 8
         ? "The formatting appears mostly ATS-friendly because the content is readable and organized. Continue using simple headings, consistent bullets, and text-based formatting instead of tables or image-heavy layouts."
-        : breakdown.atsFormatting >= 8
+        : breakdown.atsFormatting >= 5
             ? "The formatting is usable, but it can be cleaner and more consistent. Improve spacing, bullet alignment, and section hierarchy so recruiters can scan the resume quickly."
             : "The formatting needs improvement for ATS readability and recruiter scanning. Use a simple one-column layout, clear section titles, consistent bullets, and avoid decorative elements that may not parse well.",
     keywordStrength: breakdown.skillsAndKeywords >= 16
@@ -48,9 +140,9 @@ const buildResumeHealth = (breakdown) => ({
             ? "The project or experience section has useful content, but it needs clearer technical depth. Each project should explain what you built, which APIs or database logic you handled, and what result the work produced."
             : "The project or experience section does not yet show enough technical contribution. Add bullets that describe architecture, features built, database usage, authentication flow, integrations, deployment, and measurable results."
     ,
-    quantifiedAchievements: breakdown.quantificationImpact >= 8
+    quantifiedAchievements: breakdown.quantificationImpact >= 11
         ? "The resume uses measurable results well, which helps recruiters understand impact. Keep using numbers such as users, performance gains, reduced time, accuracy, scale, or project outcomes wherever truthful."
-        : breakdown.quantificationImpact >= 4
+        : breakdown.quantificationImpact >= 6
             ? "The resume includes a few measurable details, but impact is still underdeveloped. Add numbers to show scale, performance, efficiency, users, marks, rankings, or before-and-after improvements."
             : "The resume has little measurable impact, so achievements may feel like task descriptions. Add quantified outcomes wherever possible, such as performance improvement, number of users, APIs built, pages created, or time saved.",
     contactInfoStatus: breakdown.contactInformation >= 8
@@ -85,6 +177,190 @@ const normalizeFeedbackList = (items = [], fallback = []) => {
         .filter(Boolean);
 };
 
+const hasJobMatchContext = (jobMatchInput = {}) => Boolean(
+    jobMatchInput.targetRole || jobMatchInput.jobDescription
+);
+
+const getRoleExpectedSkills = (targetRole = "") => {
+    const role = normalizeSearchText(targetRole);
+
+    if (ROLE_SKILL_MAP[role]) return ROLE_SKILL_MAP[role];
+
+    if (/frontend|front-end|react/.test(role)) {
+        return ROLE_SKILL_MAP["frontend developer"];
+    }
+
+    if (/backend|back-end|node|express/.test(role)) {
+        return ROLE_SKILL_MAP["backend developer"];
+    }
+
+    if (/mern|full stack|full-stack/.test(role)) {
+        return ROLE_SKILL_MAP["mern developer"];
+    }
+
+    if (/java/.test(role)) {
+        return ROLE_SKILL_MAP["java developer"];
+    }
+
+    if (/python/.test(role)) {
+        return ROLE_SKILL_MAP["python developer"];
+    }
+
+    if (/data/.test(role)) {
+        return ROLE_SKILL_MAP["data analyst"];
+    }
+
+    if (/ai|ml|machine learning/.test(role)) {
+        return ROLE_SKILL_MAP["ai/ml intern"];
+    }
+
+    if (/cyber|security/.test(role)) {
+        return ROLE_SKILL_MAP["cyber security"];
+    }
+
+    return ROLE_SKILL_MAP["general fresher"];
+};
+
+const extractContextSkills = (contextText = "") => {
+    return TECHNICAL_KEYWORDS.filter((skill) => keywordMatchesText(contextText, skill));
+};
+
+const extractImportantKeywords = (contextText = "") => {
+    const stopWords = new Set([
+        "and", "the", "for", "with", "you", "your", "our", "are", "will", "this", "that",
+        "from", "have", "has", "work", "role", "candidate", "experience", "skills", "good",
+        "strong", "using", "must", "should", "ability", "knowledge", "team", "job", "about",
+        "into", "their", "they", "them", "who", "can", "all", "any", "more", "such",
+        "need", "needs", "developer", "engineer", "looking", "required"
+    ]);
+    const words = normalizeSearchText(contextText)
+        .split(" ")
+        .map((word) => word.replace(/^[^a-z0-9+#]+|[^a-z0-9+#]+$/g, ""))
+        .filter((word) => word.length >= 4 && !stopWords.has(word) && !/^\d+$/.test(word));
+    const counts = words.reduce((result, word) => {
+        result[word] = (result[word] || 0) + 1;
+        return result;
+    }, {});
+
+    return Object.entries(counts)
+        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+        .slice(0, 18)
+        .map(([word]) => word);
+};
+
+const calculateJobMatchScore = (resumeText = "", targetRole = "", jobDescription = "") => {
+    const normalizedRole = normalizeSearchText(targetRole);
+    const normalizedDescription = normalizeSearchText(jobDescription);
+
+    if (!normalizedRole && !normalizedDescription) return null;
+
+    const roleSkills = normalizedRole ? getRoleExpectedSkills(targetRole) : [];
+    const jdSkills = normalizedDescription ? extractContextSkills(jobDescription) : [];
+    const requiredSkills = uniqueList([
+        ...(normalizedDescription ? jdSkills : []),
+        ...roleSkills
+    ]).slice(0, 18);
+    const keywordPool = uniqueList([
+        ...(normalizedDescription ? extractImportantKeywords(jobDescription) : []),
+        ...roleSkills.map((skill) => normalizeSearchText(skill)).filter(Boolean)
+    ]).slice(0, 24);
+    const matchedSkills = requiredSkills.filter((skill) => keywordMatchesText(resumeText, skill));
+    const missingSkills = requiredSkills.filter((skill) => !keywordMatchesText(resumeText, skill));
+    const matchedKeywords = keywordPool.filter((keyword) => keywordMatchesText(resumeText, keyword));
+    const missingKeywords = keywordPool.filter((keyword) => !keywordMatchesText(resumeText, keyword));
+    const skillScore = requiredSkills.length
+        ? Math.round((matchedSkills.length / requiredSkills.length) * 45)
+        : 0;
+    const keywordScore = keywordPool.length
+        ? Math.round((matchedKeywords.length / keywordPool.length) * 25)
+        : Math.round((matchedSkills.length / Math.max(requiredSkills.length, 1)) * 18);
+    const implementationMatches = countKeywordMatches(resumeText, IMPLEMENTATION_KEYWORDS);
+    const actionVerbMatches = countMatches(normalizeSearchText(resumeText), ACTION_VERBS.map((verb) => new RegExp(`\\b${verb}\\b`, "i")));
+    const hasProjectOrExperience = hasAny(normalizeSearchText(resumeText), [/projects?/, /experience/, /internship/, /work history/]);
+    const projectExperienceScore = Math.min(20,
+        (hasProjectOrExperience ? 5 : 0) +
+        Math.min(implementationMatches * 3, 9) +
+        Math.min(actionVerbMatches, 4) +
+        (/\b(deployed|live|hosted|production|users?|clients?)\b/i.test(resumeText) ? 2 : 0)
+    );
+    const roleSkillRatio = requiredSkills.length ? matchedSkills.length / requiredSkills.length : 0;
+    const roleMentioned = normalizedRole && keywordMatchesText(resumeText, targetRole);
+    const roleDomainAlignment = Math.min(10,
+        (roleMentioned ? 3 : 0) +
+        Math.round(roleSkillRatio * 7)
+    );
+    const matchScore = normalizeScore(
+        skillScore + keywordScore + projectExperienceScore + roleDomainAlignment,
+        100
+    );
+    const inferredRole = targetRole || (jdSkills[0] ? `${jdSkills[0]} Role` : "Inferred from job description");
+
+    return {
+        targetRole: inferredRole,
+        jobDescriptionProvided: Boolean(normalizedDescription),
+        matchScore,
+        matchedSkills: matchedSkills.slice(0, 12),
+        missingSkills: missingSkills.slice(0, 12),
+        missingKeywords: missingKeywords.slice(0, 12),
+        roleSpecificSuggestions: [
+            `Add the strongest missing ${inferredRole} skills naturally in the skills and project sections.`,
+            "Mirror important job description keywords only where they honestly match your experience.",
+            "Strengthen project bullets with implementation details such as APIs, database work, authentication, deployment, or measurable outcomes."
+        ],
+        resumeRewriteTips: [
+            "Rewrite project bullets with action verb + technical task + tool + measurable result.",
+            "Place the most relevant matched skills near the top of the skills section.",
+            "Add missing role keywords to project descriptions only when the project actually used them."
+        ],
+        readinessLevel: matchScore >= 75
+            ? "Strong match - ready to apply with minor polishing"
+            : matchScore >= 55
+                ? "Moderate match - needs improvement before applying"
+                : "Low match - add stronger role-specific evidence before applying",
+        summary: `The resume matches ${matchedSkills.length} of ${requiredSkills.length || "the"} expected role skills and ${matchedKeywords.length} important keywords. The score is based on deterministic skill overlap, keyword overlap, project relevance, and role alignment.`
+    };
+};
+
+const deterministicFallbackJobMatch = (resumeText = "", jobMatchInput = {}) => (
+    calculateJobMatchScore(resumeText, jobMatchInput.targetRole, jobMatchInput.jobDescription)
+);
+
+const normalizeJobMatchAnalysis = (jobMatchAnalysis, resumeText = "", jobMatchInput = {}, fixedJobMatchAnalysis = null) => {
+    if (!hasJobMatchContext(jobMatchInput)) return null;
+
+    const fixedAnalysis = fixedJobMatchAnalysis
+        || calculateJobMatchScore(resumeText, jobMatchInput.targetRole, jobMatchInput.jobDescription);
+
+    if (!fixedAnalysis) return null;
+
+    const safeJobMatchAnalysis = jobMatchAnalysis && typeof jobMatchAnalysis === "object"
+        ? jobMatchAnalysis
+        : {};
+
+    return {
+        targetRole: fixedAnalysis.targetRole,
+        jobDescriptionProvided: fixedAnalysis.jobDescriptionProvided,
+        matchScore: fixedAnalysis.matchScore,
+        matchedSkills: fixedAnalysis.matchedSkills,
+        missingSkills: fixedAnalysis.missingSkills,
+        missingKeywords: fixedAnalysis.missingKeywords,
+        roleSpecificSuggestions: normalizeFeedbackList(
+            safeJobMatchAnalysis.roleSpecificSuggestions,
+            fixedAnalysis.roleSpecificSuggestions
+        ).slice(0, 8),
+        resumeRewriteTips: normalizeFeedbackList(
+            safeJobMatchAnalysis.resumeRewriteTips,
+            fixedAnalysis.resumeRewriteTips
+        ).slice(0, 8),
+        readinessLevel: typeof safeJobMatchAnalysis.readinessLevel === "string" && safeJobMatchAnalysis.readinessLevel.trim()
+            ? safeJobMatchAnalysis.readinessLevel.trim()
+            : fixedAnalysis.readinessLevel,
+        summary: typeof safeJobMatchAnalysis.summary === "string" && safeJobMatchAnalysis.summary.trim()
+            ? safeJobMatchAnalysis.summary.trim()
+            : fixedAnalysis.summary
+    };
+};
+
 const normalizeResumeHealth = (resumeHealth, breakdown) => {
     const fallbackHealth = buildResumeHealth(breakdown);
 
@@ -111,6 +387,100 @@ const calculateScoreFromBreakdown = (scoreBreakdown = {}) => {
     return {
         atsScore: normalizeScore(atsScore, 100),
         scoreBreakdown: normalizedBreakdown
+    };
+};
+
+const calculateAtsScore = (resumeText = "") => {
+    const text = normalizeSearchText(resumeText);
+    const wordCount = getWordCount(resumeText);
+    const lineCount = String(resumeText).split("\n").filter((line) => line.trim()).length;
+    const bulletCount = (resumeText.match(/[\u2022\-*]\s+/g) || []).length;
+    const numberCount = (resumeText.match(/\b\d+(\.\d+)?%?\b/g) || []).length;
+    const technicalMatches = countKeywordMatches(resumeText, TECHNICAL_KEYWORDS);
+    const implementationMatches = countKeywordMatches(resumeText, IMPLEMENTATION_KEYWORDS);
+    const actionVerbMatches = countMatches(text, ACTION_VERBS.map((verb) => new RegExp(`\\b${verb}\\b`, "i")));
+    const hasEmail = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(resumeText);
+    const hasPhone = /(\+?\d[\d\s().-]{8,}\d)/.test(resumeText);
+    const hasLinkedIn = /linkedin\.com|linkedin/i.test(resumeText);
+    const hasGithubOrPortfolio = /github\.com|github|portfolio|vercel\.app|netlify\.app|behance\.net|dribbble\.com/i.test(resumeText);
+
+    const contactInformation = Math.min(10,
+        (hasEmail ? 3 : 0) +
+        (hasPhone ? 2 : 0) +
+        (hasLinkedIn ? 2 : 0) +
+        (hasGithubOrPortfolio ? 2 : 0) +
+        (wordCount > 80 ? 1 : 0)
+    );
+
+    const resumeSections = Math.min(15,
+        (hasAny(text, [/education/, /degree/, /university/, /college/, /bachelor/, /master/]) ? 3 : 0) +
+        (hasAny(text, [/skills/, /technical skills/, /technologies/]) ? 3 : 0) +
+        (hasAny(text, [/projects?/, /project work/]) ? 3 : 0) +
+        (hasAny(text, [/experience/, /internship/, /work experience/, /employment/]) ? 2 : 0) +
+        (hasAny(text, [/certifications?/, /certificate/]) ? 1 : 0) +
+        (hasAny(text, [/achievements?/, /awards?/, /honors?/]) ? 1 : 0) +
+        (hasAny(text, [/summary/, /objective/, /profile/]) ? 1 : 0) +
+        (wordCount >= 250 ? 1 : 0)
+    );
+
+    const skillsAndKeywords = Math.min(20,
+        Math.min(technicalMatches * 1.5, 15) +
+        (hasAny(text, [/framework/, /library/, /tools?/, /database/, /cloud/, /version control/]) ? 3 : 0) +
+        (technicalMatches >= 8 ? 2 : technicalMatches >= 4 ? 1 : 0)
+    );
+
+    const experienceProjectsQuality = Math.min(20,
+        (hasAny(text, [/projects?/, /experience/, /internship/]) ? 4 : 0) +
+        Math.min(implementationMatches * 2, 8) +
+        Math.min(actionVerbMatches, 4) +
+        (hasAny(text, [/tech stack/, /technologies used/, /built with/, /using react/, /using node/, /using python/]) ? 2 : 0) +
+        (hasAny(text, [/deployed/, /live/, /hosted/, /production/, /users?/, /clients?/]) ? 2 : 0)
+    );
+
+    const quantificationImpact = Math.min(15,
+        Math.min(numberCount * 2, 8) +
+        (hasAny(text, [/%/, /increased/, /reduced/, /improved/, /optimized/, /performance/, /accuracy/, /latency/]) ? 3 : 0) +
+        (hasAny(text, [/users?/, /clients?/, /records?/, /files?/, /requests?/, /apis?/, /score/, /cgpa/, /gpa/]) ? 3 : 0) +
+        (numberCount >= 5 ? 1 : 0)
+    );
+
+    const symbolRatio = resumeText.length
+        ? (resumeText.match(/[^a-zA-Z0-9\s.,:;()/%@+\-#]/g) || []).length / resumeText.length
+        : 1;
+    const atsFormatting = Math.min(10,
+        (wordCount >= 180 ? 2 : wordCount >= 90 ? 1 : 0) +
+        (lineCount >= 8 ? 2 : lineCount >= 4 ? 1 : 0) +
+        (hasAny(text, [/education/, /skills/, /projects?/, /experience/]) ? 2 : 0) +
+        (bulletCount >= 4 ? 1 : 0) +
+        (!/[|]{3,}/.test(resumeText) ? 1 : 0) +
+        (!/(image-only|scanned|photo|table table)/i.test(resumeText) ? 1 : 0) +
+        (symbolRatio < 0.08 ? 1 : 0)
+    );
+
+    const fillerMatches = countMatches(text, [/hard working/g, /very good/g, /i am/g, /my name is/g, /please hire/g]);
+    const grammarProfessionalism = Math.min(10,
+        (wordCount >= 160 ? 2 : wordCount >= 90 ? 1 : 0) +
+        (actionVerbMatches >= 5 ? 3 : actionVerbMatches >= 2 ? 2 : actionVerbMatches >= 1 ? 1 : 0) +
+        (fillerMatches === 0 ? 2 : fillerMatches === 1 ? 1 : 0) +
+        (lineCount >= 8 ? 1 : 0) +
+        (!/[^\S\r\n]{5,}/.test(resumeText) ? 1 : 0) +
+        (technicalMatches >= 4 ? 1 : 0)
+    );
+
+    const { atsScore, scoreBreakdown } = calculateScoreFromBreakdown({
+        contactInformation,
+        resumeSections,
+        skillsAndKeywords,
+        experienceProjectsQuality,
+        atsFormatting,
+        quantificationImpact,
+        grammarProfessionalism
+    });
+
+    return {
+        atsScore,
+        atsBreakdown: scoreBreakdown,
+        scoreBreakdown
     };
 };
 
@@ -198,9 +568,11 @@ const deterministicFallbackScore = (resumeText = "") => {
         ? Math.min(Math.max(rawAtsScore, 35), 90)
         : rawAtsScore;
 
+    const fixedAnalysis = calculateAtsScore(resumeText);
+
     return {
-        atsScore,
-        scoreBreakdown,
+        atsScore: fixedAnalysis.atsScore,
+        scoreBreakdown: fixedAnalysis.scoreBreakdown,
         strengths: [
             contactInformation >= 7
                 ? "The resume includes enough contact information for a recruiter to identify and reach the candidate. This improves basic ATS completeness and makes profile verification easier."
@@ -242,7 +614,7 @@ const deterministicFallbackScore = (resumeText = "") => {
             ],
             estimatedImprovement: "Improving keywords, structure, and quantified impact can raise the ATS score."
         },
-        resumeHealth: buildResumeHealth(scoreBreakdown),
+        resumeHealth: buildResumeHealth(fixedAnalysis.scoreBreakdown),
         interviewQuestions: {
             technical: [
                 "Which technologies in your resume are you most confident using?",
@@ -269,14 +641,12 @@ const deterministicFallbackScore = (resumeText = "") => {
     };
 };
 
-const validateAnalysis = (analysis, resumeText) => {
-    const { atsScore, scoreBreakdown } = calculateScoreFromBreakdown(analysis.scoreBreakdown || {});
+const validateAnalysis = (analysis = {}, resumeText, jobMatchInput = {}, fixedScores = {}) => {
+    const fixedAtsAnalysis = fixedScores.atsAnalysis || calculateAtsScore(resumeText);
+    const atsScore = fixedAtsAnalysis.atsScore;
+    const scoreBreakdown = fixedAtsAnalysis.scoreBreakdown;
 
-    if (!Number.isFinite(atsScore)) {
-        return deterministicFallbackScore(resumeText);
-    }
-
-    return {
+    const normalizedAnalysis = {
         atsScore,
         scoreBreakdown,
         strengths: normalizeFeedbackList(analysis.strengths),
@@ -310,10 +680,24 @@ const validateAnalysis = (analysis, resumeText) => {
                 : []
         }
     };
+
+    const jobMatchAnalysis = normalizeJobMatchAnalysis(
+        analysis.jobMatchAnalysis,
+        resumeText,
+        jobMatchInput,
+        fixedScores.jobMatchAnalysis
+    );
+
+    return jobMatchAnalysis
+        ? { ...normalizedAnalysis, jobMatchAnalysis }
+        : normalizedAnalysis;
 };
 
 module.exports = {
+    calculateAtsScore,
+    calculateJobMatchScore,
     calculateScoreFromBreakdown,
     deterministicFallbackScore,
+    deterministicFallbackJobMatch,
     validateAnalysis
 };

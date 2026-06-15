@@ -19,8 +19,8 @@ export const downloadReportPdf = (resume) => {
         ["Resume Sections", resume.scoreBreakdown?.resumeSections, 15],
         ["Skills and Keywords", resume.scoreBreakdown?.skillsAndKeywords, 20],
         ["Experience/Projects Quality", resume.scoreBreakdown?.experienceProjectsQuality, 20],
-        ["ATS Formatting", resume.scoreBreakdown?.atsFormatting, 15],
-        ["Quantification and Impact", resume.scoreBreakdown?.quantificationImpact, 10],
+        ["ATS Formatting", resume.scoreBreakdown?.atsFormatting, 10],
+        ["Quantification and Impact", resume.scoreBreakdown?.quantificationImpact, 15],
         ["Grammar and Professionalism", resume.scoreBreakdown?.grammarProfessionalism, 10]
     ].filter(([, value]) => Number.isFinite(Number(value)));
     const resumeHealthItems = [
@@ -31,6 +31,10 @@ export const downloadReportPdf = (resume) => {
         ["Quantified Achievements", resume.resumeHealth?.quantifiedAchievements],
         ["Contact Info Status", resume.resumeHealth?.contactInfoStatus]
     ].filter(([, value]) => value);
+    const jobMatchAnalysis = resume.jobMatchAnalysis;
+    const hasJobMatchAnalysis = Boolean(jobMatchAnalysis);
+    const jobMatchScore = Number(jobMatchAnalysis?.matchScore);
+    const hasJobMatchScore = Number.isFinite(jobMatchScore);
 
     const addPageIfNeeded = (requiredHeight = 10) => {
         if (y + requiredHeight > pageHeight - bottomMargin) {
@@ -142,6 +146,30 @@ export const downloadReportPdf = (resume) => {
         });
 
         y += 3;
+    }
+
+    if (hasJobMatchAnalysis) {
+        addSectionTitle("Job Match Analyzer");
+        addWrappedText(hasJobMatchScore ? `Match Score: ${jobMatchScore}/100` : "Match Score: Unavailable");
+        addWrappedText(`Target Role: ${jobMatchAnalysis.targetRole || "Not available"}`);
+        addWrappedText(`Job Description Provided: ${jobMatchAnalysis.jobDescriptionProvided ? "Yes" : "No"}`);
+        addWrappedText(`Readiness Level: ${jobMatchAnalysis.readinessLevel || "Not available"}`);
+        addWrappedText(`Summary: ${jobMatchAnalysis.summary || "Not available"}`);
+
+        addSectionTitle("Matched Skills");
+        addList(jobMatchAnalysis.matchedSkills);
+
+        addSectionTitle("Missing Skills");
+        addList(jobMatchAnalysis.missingSkills);
+
+        addSectionTitle("Missing Keywords");
+        addList(jobMatchAnalysis.missingKeywords);
+
+        addSectionTitle("Role-specific Suggestions");
+        addList(jobMatchAnalysis.roleSpecificSuggestions);
+
+        addSectionTitle("Resume Rewrite Tips");
+        addList(jobMatchAnalysis.resumeRewriteTips);
     }
 
     addSectionTitle("Technical Questions");
