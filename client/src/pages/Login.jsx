@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
     getAuthErrorMessage,
     logSafeApiError,
+    logSafeApiRequest,
     pingServerHealth,
     postWithWakeRetry,
     REQUEST_TIMEOUTS
@@ -44,6 +45,8 @@ function Login() {
         setLoading(true);
 
         try {
+            logSafeApiRequest("Login", "/auth/login");
+
             const response = await postWithWakeRetry("/auth/login", formData, {
                 timeout: REQUEST_TIMEOUTS.auth
             });

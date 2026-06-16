@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
     isTimeoutError,
     logSafeApiError,
+    logSafeApiRequest,
     pingServerHealth,
     postWithWakeRetry,
     REQUEST_TIMEOUTS
@@ -172,23 +173,19 @@ function UploadResume() {
 
         const formData = new FormData();
         formData.append("resume", file);
-
-        if (targetRole.trim()) {
-            formData.append("targetRole", targetRole.trim());
-        }
-
-        if (targetRole === "Other / Custom Role" && customRole.trim()) {
-            formData.append("customRole", customRole.trim());
-        }
-
-        if (jobDescription.trim()) {
-            formData.append("jobDescription", jobDescription.trim().slice(0, JOB_DESCRIPTION_LIMIT));
-        }
+        formData.append("targetRole", targetRole.trim());
+        formData.append(
+            "customRole",
+            targetRole === "Other / Custom Role" ? customRole.trim() : ""
+        );
+        formData.append("jobDescription", jobDescription.trim().slice(0, JOB_DESCRIPTION_LIMIT));
 
         setLoading(true);
         setError("");
 
         try {
+            logSafeApiRequest("Upload", "/resume/upload");
+
             const response = await postWithWakeRetry("/resume/upload", formData, {
                 timeout: REQUEST_TIMEOUTS.upload,
                 headers: {

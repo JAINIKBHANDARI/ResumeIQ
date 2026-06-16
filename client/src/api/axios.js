@@ -40,6 +40,11 @@ export const logSafeApiError = (label, error) => {
     });
 };
 
+export const logSafeApiRequest = (label, url) => {
+    console.log("API baseURL:", api.defaults.baseURL);
+    console.log(`${label} final URL:`, getFinalApiUrl(api.defaults.baseURL, url));
+};
+
 export const pingServerHealth = ({ force = false, timeout = REQUEST_TIMEOUTS.health } = {}) => {
     const now = Date.now();
 
