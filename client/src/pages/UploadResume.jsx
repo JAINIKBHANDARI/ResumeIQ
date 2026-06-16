@@ -173,6 +173,7 @@ function UploadResume() {
 
         const formData = new FormData();
         formData.append("resume", file);
+        formData.append("authToken", token);
         formData.append("targetRole", targetRole.trim());
         formData.append(
             "customRole",
@@ -186,12 +187,24 @@ function UploadResume() {
         try {
             logSafeApiRequest("Upload", "/resume/upload");
 
-            const response = await postWithWakeRetry("/resume/upload", formData, {
-                timeout: REQUEST_TIMEOUTS.upload,
-                headers: {
-                    Authorization: `Bearer ${token}`
+            let response;
+
+            try {
+                response = await postWithWakeRetry("/resume/upload", formData, {
+                    timeout: REQUEST_TIMEOUTS.upload
+                });
+            } catch (uploadError) {
+                if (uploadError.response?.status !== 401) {
+                    throw uploadError;
                 }
-            });
+
+                response = await postWithWakeRetry("/resume/upload", formData, {
+                    timeout: REQUEST_TIMEOUTS.upload,
+                    headers: {
+                        Authorization: `Bearer ${token}`
+                    }
+                });
+            }
 
             const resumeId = response.data.resume.id;
 

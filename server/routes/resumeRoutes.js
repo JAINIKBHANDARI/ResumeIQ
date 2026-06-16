@@ -11,7 +11,7 @@ const {
     deleteResumeById
 } = require("../controllers/resumeController");
 
-router.post("/upload", protect, upload.single("resume"), uploadResume);
+router.post("/upload", upload.single("resume"), protect, uploadResume);
 
 router.get("/history", protect, getResumeHistory);
 

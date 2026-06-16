@@ -1,4 +1,5 @@
 const jwt = require("jsonwebtoken");
+const fs = require("fs");
 const User = require("../models/User");
 
 const getCookieToken = (req) => {
@@ -12,6 +13,12 @@ const getCookieToken = (req) => {
         .find((cookie) => cookie.startsWith("token="));
 
     return tokenCookie ? decodeURIComponent(tokenCookie.split("=")[1]) : null;
+};
+
+const cleanupUploadedFile = (req) => {
+    if (!req.file?.path) return;
+
+    fs.unlink(req.file.path, () => {});
 };
 
 const protect = async (req, res, next) => {
@@ -29,7 +36,13 @@ const protect = async (req, res, next) => {
             token = getCookieToken(req);
         }
 
+        if (!token && typeof req.body?.authToken === "string") {
+            token = req.body.authToken;
+        }
+
         if (!token) {
+            cleanupUploadedFile(req);
+
             return res.status(401).json({
                 message: "Not authorized, no token"
             });
@@ -39,9 +52,19 @@ const protect = async (req, res, next) => {
 
         req.user = await User.findById(decoded.id).select("-password");
 
+        if (!req.user) {
+            cleanupUploadedFile(req);
+
+            return res.status(401).json({
+                message: "Not authorized, user not found"
+            });
+        }
+
         next();
 
     } catch (error) {
+        cleanupUploadedFile(req);
+
         return res.status(401).json({
             message: "Not authorized, token failed"
         });
