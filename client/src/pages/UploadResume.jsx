@@ -16,6 +16,54 @@ const ROLE_OPTIONS = [
     "Other / Custom Role"
 ];
 
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+
+const isPdfFile = (selectedFile) => {
+    if (!selectedFile) return false;
+
+    const hasPdfExtension = selectedFile.name?.toLowerCase().endsWith(".pdf");
+    const allowedMimeTypes = [
+        "application/pdf",
+        "application/x-pdf",
+        "application/octet-stream",
+        ""
+    ];
+    const hasPdfType = allowedMimeTypes.includes(selectedFile.type);
+
+    return hasPdfExtension && hasPdfType;
+};
+
+const getUploadErrorMessage = (error) => {
+    if (error.code === "ECONNABORTED") {
+        return "Analysis is taking longer than expected. Please wait and try again.";
+    }
+
+    if (!error.response) {
+        return "Network error. Please check your connection and try again. If the backend is waking up, wait a moment before retrying.";
+    }
+
+    const status = error.response.status;
+    const serverMessage = error.response.data?.message;
+
+    if (status === 413) {
+        return serverMessage || "File is too large. Please upload a PDF under 5MB.";
+    }
+
+    if (status === 400) {
+        return serverMessage || "Please upload a valid text-based PDF resume.";
+    }
+
+    if (status === 502 || status === 503 || status === 504) {
+        return serverMessage || "The analysis server is waking up or busy. Please wait a moment and try again.";
+    }
+
+    if (status >= 500) {
+        return serverMessage || "AI analysis failed. Please try again in a few minutes.";
+    }
+
+    return serverMessage || "Analysis failed. Please try again.";
+};
+
 function UploadResume() {
     const navigate = useNavigate();
     const { token } = useAuth();
@@ -28,15 +76,51 @@ function UploadResume() {
     const [error, setError] = useState("");
 
     const handleFileChange = (e) => {
-        setFile(e.target.files[0]);
+        const selectedFile = e.target.files?.[0] || null;
+
+        if (!selectedFile) {
+            setFile(null);
+            setError("");
+            return;
+        }
+
+        if (!isPdfFile(selectedFile)) {
+            setFile(null);
+            e.target.value = "";
+            setError("Only PDF resume files are supported.");
+            return;
+        }
+
+        if (selectedFile.size > MAX_RESUME_SIZE_BYTES) {
+            setFile(null);
+            e.target.value = "";
+            setError("File is too large. Please upload a PDF under 5MB.");
+            return;
+        }
+
+        setFile(selectedFile);
         setError("");
     };
 
     const handleUpload = async (e) => {
         e.preventDefault();
 
+        if (loading) {
+            return;
+        }
+
         if (!file) {
             setError("Please select a resume PDF first");
+            return;
+        }
+
+        if (!isPdfFile(file)) {
+            setError("Only PDF resume files are supported.");
+            return;
+        }
+
+        if (file.size > MAX_RESUME_SIZE_BYTES) {
+            setError("File is too large. Please upload a PDF under 5MB.");
             return;
         }
 
@@ -65,9 +149,9 @@ function UploadResume() {
 
         try {
             const response = await api.post("/resume/upload", formData, {
+                timeout: 120000,
                 headers: {
-                    Authorization: `Bearer ${token}`,
-                    "Content-Type": "multipart/form-data"
+                    Authorization: `Bearer ${token}`
                 }
             });
 
@@ -76,10 +160,16 @@ function UploadResume() {
             navigate(`/result/${resumeId}`);
 
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-        "Analysis failed. Please try again."
-            );
+            if (import.meta.env.DEV) {
+                console.error("Resume upload failed:", {
+                    message: error.message,
+                    code: error.code,
+                    status: error.response?.status,
+                    data: error.response?.data
+                });
+            }
+
+            setError(getUploadErrorMessage(error));
         } finally {
             setLoading(false);
         }
@@ -178,7 +268,7 @@ function UploadResume() {
                     </button>
                     {loading && (
                         <p className="helper-text">
-                            Analysis may take a few seconds.
+                            Analyzing resume... This may take a few seconds on first request.
                         </p>
                     )}
                 </form>

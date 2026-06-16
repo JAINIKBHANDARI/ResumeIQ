@@ -1,4 +1,5 @@
 const { PDFParse } = require("pdf-parse");
+const path = require("path");
 const Resume = require("../models/Resume");
 const analyzeResumeWithAI = require("../utils/gemini");
 
@@ -23,6 +24,10 @@ const getJobMatchInput = (body = {}) => {
     };
 };
 
+const logUploadStage = (stage, details = {}) => {
+    console.info("[resume-upload]", stage, details);
+};
+
 // Upload Resume, Extract Text, Analyze with AI, and Generate Questions
 const uploadResume = async (req, res) => {
     try {
@@ -32,17 +37,38 @@ const uploadResume = async (req, res) => {
             });
         }
 
-        let extractedText = "";
+        logUploadStage("received", {
+            userId: req.user?._id?.toString(),
+            filename: req.file.originalname,
+            size: req.file.size,
+            mimetype: req.file.mimetype
+        });
 
-        if (req.file.mimetype === "application/pdf") {
-            const parser = new PDFParse({
-                url: req.file.path
+        let extractedText = "";
+        const isPdfUpload = path.extname(req.file.originalname).toLowerCase() === ".pdf";
+
+        if (!isPdfUpload) {
+            return res.status(400).json({
+                message: "Only PDF resume files are supported."
+            });
+        }
+
+        let parser;
+
+        try {
+            logUploadStage("extracting-pdf-text", {
+                filename: req.file.filename
             });
 
+            parser = new PDFParse({
+                url: req.file.path
+            });
             const result = await parser.getText();
             extractedText = result.text;
-
-            await parser.destroy();
+        } finally {
+            if (parser) {
+                await parser.destroy();
+            }
         }
 
         if (!extractedText || extractedText.trim().length < 50) {
@@ -52,7 +78,14 @@ const uploadResume = async (req, res) => {
         }
 
         const jobMatchInput = getJobMatchInput(req.body);
+        logUploadStage("starting-ai-analysis", {
+            textLength: extractedText.length,
+            hasTargetRole: Boolean(jobMatchInput.targetRole),
+            hasJobDescription: Boolean(jobMatchInput.jobDescription)
+        });
+
         const aiAnalysis = await analyzeResumeWithAI(extractedText, jobMatchInput);
+        logUploadStage("saving-analysis");
 
         const resume = await Resume.create({
             filename: req.file.filename,
@@ -70,6 +103,10 @@ const uploadResume = async (req, res) => {
             actionPlan: aiAnalysis.actionPlan,
             interviewQuestions: aiAnalysis.interviewQuestions,
             ...(aiAnalysis.jobMatchAnalysis ? { jobMatchAnalysis: aiAnalysis.jobMatchAnalysis } : {})
+        });
+
+        logUploadStage("completed", {
+            resumeId: resume._id.toString()
         });
 
         res.status(201).json({
@@ -94,9 +131,10 @@ const uploadResume = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("[resume-upload] failed:", error.message);
+
         res.status(500).json({
-            message: "Server error",
-            error: error.message
+            message: "AI analysis failed. Please try again in a few minutes."
         });
     }
 };

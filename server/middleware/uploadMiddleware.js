@@ -18,22 +18,32 @@ const storage = multer.diskStorage({
     }
 });
 
-const fileFilter = (req, file, cb) => {
-    const allowedFileTypes = /pdf|doc|docx/;
-    const extname = allowedFileTypes.test(
-        path.extname(file.originalname).toLowerCase()
-    );
+const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
 
-    if (extname) {
+const fileFilter = (req, file, cb) => {
+    const hasPdfExtension = path.extname(file.originalname).toLowerCase() === ".pdf";
+    const allowedMimeTypes = [
+        "application/pdf",
+        "application/x-pdf",
+        "application/octet-stream"
+    ];
+    const hasPdfMimeType = allowedMimeTypes.includes(file.mimetype);
+
+    if (hasPdfExtension && hasPdfMimeType) {
         return cb(null, true);
     }
 
-    cb(new Error("Only PDF, DOC, DOCX files are allowed"));
+    const error = new Error("Only PDF files are allowed");
+    error.code = "INVALID_FILE_TYPE";
+    cb(error);
 };
 
 const upload = multer({
     storage,
-    fileFilter
+    fileFilter,
+    limits: {
+        fileSize: MAX_RESUME_SIZE_BYTES
+    }
 });
 
 module.exports = upload;
