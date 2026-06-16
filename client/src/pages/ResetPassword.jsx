@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import api from "../api/axios";
+import api, { getAuthErrorMessage, REQUEST_TIMEOUTS } from "../api/axios";
 
 function ResetPassword() {
     const { token } = useParams();
@@ -32,6 +32,8 @@ function ResetPassword() {
         try {
             const response = await api.post(`/auth/reset-password/${token}`, {
                 password
+            }, {
+                timeout: REQUEST_TIMEOUTS.auth
             });
 
             setMessage(response.data.message);
@@ -40,10 +42,7 @@ function ResetPassword() {
                 navigate("/login");
             }, 1500);
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-                "Password reset failed. Please request a new link."
-            );
+            setError(await getAuthErrorMessage(error, "Password reset failed. Please request a new link."));
         } finally {
             setLoading(false);
         }

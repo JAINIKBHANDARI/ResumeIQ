@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import api, { REQUEST_TIMEOUTS } from "../api/axios";
 import { useAuth } from "../context/useAuth";
 
 const ROLE_OPTIONS = [
@@ -17,6 +17,7 @@ const ROLE_OPTIONS = [
 ];
 
 const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
+const JOB_DESCRIPTION_LIMIT = 8000;
 
 const isPdfFile = (selectedFile) => {
     if (!selectedFile) return false;
@@ -39,6 +40,16 @@ const getUploadErrorMessage = (error) => {
     }
 
     if (!error.response) {
+        const baseURL = error.config?.baseURL || "";
+        const isLocalApiOnDeployedSite = (
+            baseURL.includes("localhost")
+            || baseURL.includes("127.0.0.1")
+        ) && !["localhost", "127.0.0.1"].includes(window.location.hostname);
+
+        if (isLocalApiOnDeployedSite) {
+            return "Backend API URL is not configured for production. Please check the deployed frontend API setting.";
+        }
+
         return "Network error. Please check your connection and try again. If the backend is waking up, wait a moment before retrying.";
     }
 
@@ -141,7 +152,7 @@ function UploadResume() {
         }
 
         if (jobDescription.trim()) {
-            formData.append("jobDescription", jobDescription.trim());
+            formData.append("jobDescription", jobDescription.trim().slice(0, JOB_DESCRIPTION_LIMIT));
         }
 
         setLoading(true);
@@ -149,7 +160,7 @@ function UploadResume() {
 
         try {
             const response = await api.post("/resume/upload", formData, {
-                timeout: 120000,
+                timeout: REQUEST_TIMEOUTS.upload,
                 headers: {
                     Authorization: `Bearer ${token}`
                 }

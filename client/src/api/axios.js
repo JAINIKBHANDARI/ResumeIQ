@@ -1,10 +1,124 @@
 import axios from "axios";
 import { clearAuthStorage } from "../utils/auth";
 
+const LOCAL_API_URL = "http://localhost:5000/api";
+const HEALTH_PING_COOLDOWN_MS = 60000;
+
+export const REQUEST_TIMEOUTS = {
+    auth: 60000,
+    upload: 180000,
+    health: 60000
+};
+
+const isLocalApiUrl = (url) => (
+    url.startsWith("http://localhost")
+    || url.startsWith("http://127.0.0.1")
+);
+
+const getApiBaseUrl = () => {
+    const configuredUrl = (import.meta.env.VITE_API_URL || LOCAL_API_URL).trim();
+    const normalizedUrl = configuredUrl.replace(/\/+$/, "");
+
+    if (
+        import.meta.env.PROD
+        && normalizedUrl.startsWith("http://")
+        && !isLocalApiUrl(normalizedUrl)
+    ) {
+        return normalizedUrl.replace("http://", "https://");
+    }
+
+    return normalizedUrl;
+};
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000/api",
+    baseURL: getApiBaseUrl(),
     withCredentials: true
 });
+
+let healthPingPromise = null;
+let lastHealthPingAt = 0;
+
+export const isTimeoutError = (error) => (
+    error.code === "ECONNABORTED"
+    || error.code === "ETIMEDOUT"
+    || error.message?.toLowerCase().includes("timeout")
+);
+
+export const isNetworkError = (error) => !error.response;
+
+export const pingServerHealth = ({ force = false, timeout = REQUEST_TIMEOUTS.health } = {}) => {
+    const now = Date.now();
+
+    if (!force && healthPingPromise) {
+        return healthPingPromise;
+    }
+
+    if (!force && now - lastHealthPingAt < HEALTH_PING_COOLDOWN_MS) {
+        return Promise.resolve(false);
+    }
+
+    lastHealthPingAt = now;
+    healthPingPromise = api.get("/health", { timeout })
+        .then(() => true)
+        .catch(() => false)
+        .finally(() => {
+            healthPingPromise = null;
+        });
+
+    return healthPingPromise;
+};
+
+export const postWithWakeRetry = async (url, data, config = {}) => {
+    try {
+        return await api.post(url, data, config);
+    } catch (error) {
+        if (!isNetworkError(error) && !isTimeoutError(error)) {
+            throw error;
+        }
+
+        const isHealthy = await pingServerHealth({ force: true });
+        error.__healthChecked = true;
+        error.__serverHealthy = isHealthy;
+
+        if (!isHealthy) {
+            throw error;
+        }
+
+        return api.post(url, data, config);
+    }
+};
+
+export const getAuthErrorMessage = async (error, fallbackMessage) => {
+    if (error.response?.data?.message) {
+        return error.response.data.message;
+    }
+
+    if (isTimeoutError(error)) {
+        const isHealthy = error.__healthChecked
+            ? error.__serverHealthy
+            : await pingServerHealth({ force: true });
+
+        return isHealthy
+            ? "Server is ready now. Please try again."
+            : "Connecting to server is taking longer than expected. Please wait and try again.";
+    }
+
+    if (isNetworkError(error)) {
+        const isHealthy = error.__healthChecked
+            ? error.__serverHealthy
+            : await pingServerHealth({ force: true });
+
+        return isHealthy
+            ? "Server is ready now. Please try again."
+            : "Connecting to server... This may take a few seconds on first request.";
+    }
+
+    if (error.response?.status >= 500) {
+        return "Server error. Please try again in a few minutes.";
+    }
+
+    return fallbackMessage;
+};
 
 api.interceptors.response.use(
     (response) => response,

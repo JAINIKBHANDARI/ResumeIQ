@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { getAuthErrorMessage, pingServerHealth, postWithWakeRetry, REQUEST_TIMEOUTS } from "../api/axios";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useAuth } from "../context/useAuth";
 
@@ -16,6 +16,10 @@ function Login() {
     const [error, setError] = useState("");
     const [loading, setLoading] = useState(false);
 
+    useEffect(() => {
+        pingServerHealth();
+    }, []);
+
     const handleChange = (e) => {
         setFormData({
             ...formData,
@@ -25,20 +29,24 @@ function Login() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (loading) {
+            return;
+        }
+
         setError("");
         setLoading(true);
 
         try {
-            const response = await api.post("/auth/login", formData);
+            const response = await postWithWakeRetry("/auth/login", formData, {
+                timeout: REQUEST_TIMEOUTS.auth
+            });
 
             login(response.data);
 
             navigate("/dashboard");
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-                "Server is waking up. Please try again."
-            );
+            setError(await getAuthErrorMessage(error, "Login failed. Please try again."));
         } finally {
             setLoading(false);
         }
@@ -140,7 +148,7 @@ function Login() {
                         </button>
                         {loading && (
                             <p className="helper-text">
-                                Server may take a few seconds to wake up.
+                                Connecting to server... This may take a few seconds on first request.
                             </p>
                         )}
                     </form>

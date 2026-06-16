@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import api from "../api/axios";
+import { getAuthErrorMessage, postWithWakeRetry, REQUEST_TIMEOUTS } from "../api/axios";
 import { storeAuthData } from "../utils/auth";
 
 const GOOGLE_SCRIPT_SRC = "https://accounts.google.com/gsi/client";
@@ -41,8 +41,10 @@ function GoogleAuthButton({ label = "Continue with Google", onAuthenticated, onS
             // The backend verifies this token and we do not request Gmail, Drive, or Calendar scopes.
             callback: async (response) => {
                 try {
-                    const result = await api.post("/auth/google", {
+                    const result = await postWithWakeRetry("/auth/google", {
                         credential: response.credential
+                    }, {
+                        timeout: REQUEST_TIMEOUTS.auth
                     });
 
                     if (onAuthenticated) {
@@ -54,8 +56,7 @@ function GoogleAuthButton({ label = "Continue with Google", onAuthenticated, onS
                     onSuccess?.();
                 } catch (error) {
                     onError?.(
-                        error.response?.data?.message ||
-                        "Google login failed. Please try again."
+                        await getAuthErrorMessage(error, "Google login failed. Please try again.")
                     );
                 }
             }

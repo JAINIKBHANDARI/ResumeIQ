@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import api from "../api/axios";
+import { getAuthErrorMessage, postWithWakeRetry, REQUEST_TIMEOUTS } from "../api/axios";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useAuth } from "../context/useAuth";
 
@@ -26,20 +26,24 @@ function Register() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (loading) {
+            return;
+        }
+
         setError("");
         setLoading(true);
 
         try {
-            const response = await api.post("/auth/register", formData);
+            const response = await postWithWakeRetry("/auth/register", formData, {
+                timeout: REQUEST_TIMEOUTS.auth
+            });
 
             login(response.data);
 
             navigate("/dashboard");
         } catch (error) {
-            setError(
-    error.response?.data?.message ||
-    "Server is waking up. Please try again."
-);
+            setError(await getAuthErrorMessage(error, "Registration failed. Please try again."));
         } finally {
             setLoading(false);
         }

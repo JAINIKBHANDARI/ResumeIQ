@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import api from "../api/axios";
+import api, { getAuthErrorMessage, REQUEST_TIMEOUTS } from "../api/axios";
 
 function ForgotPassword() {
     const [email, setEmail] = useState("");
@@ -15,13 +15,12 @@ function ForgotPassword() {
         setLoading(true);
 
         try {
-            const response = await api.post("/auth/forgot-password", { email });
+            const response = await api.post("/auth/forgot-password", { email }, {
+                timeout: REQUEST_TIMEOUTS.auth
+            });
             setMessage(response.data.message);
         } catch (error) {
-            setError(
-                error.response?.data?.message ||
-                "Could not send reset email. Please try again."
-            );
+            setError(await getAuthErrorMessage(error, "Could not send reset email. Please try again."));
         } finally {
             setLoading(false);
         }
