@@ -82,9 +82,10 @@ const registerUser = async (req, res) => {
         return sendAuthResponse(res, 201, "User registered successfully", user, token);
 
     } catch (error) {
-        res.status(500).json({
-            message: "Server error",
-            error: error.message
+        console.error("Register failed:", error.message);
+
+        return res.status(500).json({
+            message: "Server error. Please try again."
         });
     }
 };
@@ -102,7 +103,7 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
 
         if (!user) {
-            return res.status(400).json({
+            return res.status(401).json({
                 message: "Invalid email or password"
             });
         }
@@ -116,7 +117,7 @@ const loginUser = async (req, res) => {
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({
+            return res.status(401).json({
                 message: "Invalid email or password"
             });
         }
@@ -126,9 +127,10 @@ const loginUser = async (req, res) => {
         return sendAuthResponse(res, 200, "Login successful", user, token);
 
     } catch (error) {
-        res.status(500).json({
-            message: "Server error",
-            error: error.message
+        console.error("Login failed:", error.message);
+
+        return res.status(500).json({
+            message: "Server error. Please try again."
         });
     }
 };
@@ -209,9 +211,10 @@ const googleLoginUser = async (req, res) => {
         return sendAuthResponse(res, 200, "Google login successful", user, token);
 
     } catch (error) {
+        console.error("Google authentication failed:", error.message);
+
         return res.status(401).json({
-            message: "Google authentication failed",
-            error: error.message
+            message: "Google authentication failed"
         });
     }
 };
@@ -277,9 +280,10 @@ const forgotPassword = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Forgot password failed:", error.message);
+
         return res.status(500).json({
-            message: "Server error",
-            error: error.message
+            message: "Server error. Please try again."
         });
     }
 };
@@ -328,9 +332,10 @@ const resetPassword = async (req, res) => {
         });
 
     } catch (error) {
+        console.error("Reset password failed:", error.message);
+
         return res.status(500).json({
-            message: "Server error",
-            error: error.message
+            message: "Server error. Please try again."
         });
     }
 };

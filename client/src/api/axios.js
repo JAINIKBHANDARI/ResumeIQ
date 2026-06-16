@@ -1,5 +1,5 @@
 import axios from "axios";
-import { getApiBaseUrl } from "./config";
+import { getApiBaseUrl, getConfiguredApiUrl, getFinalApiUrl } from "./config";
 import { clearAuthStorage } from "../utils/auth";
 
 const HEALTH_PING_COOLDOWN_MS = 60000;
@@ -25,6 +25,20 @@ export const isTimeoutError = (error) => (
 );
 
 export const isNetworkError = (error) => !error.response;
+
+export const logSafeApiError = (label, error) => {
+    console.warn(`${label} failed`, {
+        viteApiUrl: getConfiguredApiUrl(),
+        axiosBaseURL: error.config?.baseURL || api.defaults.baseURL,
+        finalRequestURL: getFinalApiUrl(error.config?.baseURL || api.defaults.baseURL, error.config?.url),
+        message: error.message,
+        code: error.code,
+        status: error.response?.status,
+        data: error.response?.data,
+        hasResponse: Boolean(error.response),
+        hasRequest: Boolean(error.request)
+    });
+};
 
 export const pingServerHealth = ({ force = false, timeout = REQUEST_TIMEOUTS.health } = {}) => {
     const now = Date.now();
@@ -64,7 +78,13 @@ export const postWithWakeRetry = async (url, data, config = {}) => {
             throw error;
         }
 
-        return api.post(url, data, config);
+        try {
+            return await api.post(url, data, config);
+        } catch (retryError) {
+            retryError.__healthChecked = true;
+            retryError.__serverHealthy = true;
+            throw retryError;
+        }
     }
 };
 
@@ -79,7 +99,7 @@ export const getAuthErrorMessage = async (error, fallbackMessage) => {
             : await pingServerHealth({ force: true });
 
         return isHealthy
-            ? "Server is ready now. Please try again."
+            ? "Server is reachable, but the request timed out. Please try again."
             : "Connecting to server is taking longer than expected. Please wait and try again.";
     }
 
@@ -89,7 +109,7 @@ export const getAuthErrorMessage = async (error, fallbackMessage) => {
             : await pingServerHealth({ force: true });
 
         return isHealthy
-            ? "Server is ready now. Please try again."
+            ? "Server is reachable, but the request failed. Please try again."
             : "Connecting to server... This may take a few seconds on first request.";
     }
 

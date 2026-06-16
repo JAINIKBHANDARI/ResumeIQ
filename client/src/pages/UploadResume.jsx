@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { REQUEST_TIMEOUTS } from "../api/axios";
+import {
+    isTimeoutError,
+    logSafeApiError,
+    pingServerHealth,
+    postWithWakeRetry,
+    REQUEST_TIMEOUTS
+} from "../api/axios";
 import { useAuth } from "../context/useAuth";
 
 const ROLE_OPTIONS = [
@@ -34,12 +40,49 @@ const isPdfFile = (selectedFile) => {
     return hasPdfExtension && hasPdfType;
 };
 
-const getUploadErrorMessage = (error) => {
-    if (error.code === "ECONNABORTED") {
-        return "Analysis is taking longer than expected. Please wait and try again.";
+const getUploadErrorMessage = async (error) => {
+    if (error.response) {
+        const status = error.response.status;
+        const serverMessage = error.response.data?.message;
+
+        if (serverMessage) {
+            return serverMessage;
+        }
+
+        if (status === 413) {
+            return "File is too large. Please upload a PDF under 5MB.";
+        }
+
+        if (status === 400) {
+            return "Please upload a valid text-based PDF resume.";
+        }
+
+        if (status === 404) {
+            return "Upload service route was not found. Please refresh and try again.";
+        }
+
+        if (status === 502 || status === 503 || status === 504) {
+            return "The analysis server is waking up or busy. Please wait a moment and try again.";
+        }
+
+        if (status >= 500) {
+            return "AI analysis failed. Please try again in a few minutes.";
+        }
+
+        return "Analysis failed. Please try again.";
     }
 
-    if (!error.response) {
+    if (isTimeoutError(error)) {
+        const isHealthy = error.__healthChecked
+            ? error.__serverHealthy
+            : await pingServerHealth({ force: true });
+
+        return isHealthy
+            ? "Server is reachable, but analysis timed out. Please try again."
+            : "Analysis is taking longer than expected. Please wait and try again.";
+    }
+
+    if (error.request && !error.response) {
         const baseURL = error.config?.baseURL || "";
         const isLocalApiOnDeployedSite = (
             baseURL.includes("localhost")
@@ -50,33 +93,16 @@ const getUploadErrorMessage = (error) => {
             return "Backend API URL is not configured for production. Please check the deployed frontend API setting.";
         }
 
-        return "Unable to reach the server. Please check your connection and try again.";
+        const isHealthy = error.__healthChecked
+            ? error.__serverHealthy
+            : await pingServerHealth({ force: true });
+
+        return isHealthy
+            ? "Server is reachable, but the request failed. Please try again."
+            : "Unable to reach the server. Please check your connection and try again.";
     }
 
-    const status = error.response.status;
-    const serverMessage = error.response.data?.message;
-
-    if (status === 413) {
-        return serverMessage || "File is too large. Please upload a PDF under 5MB.";
-    }
-
-    if (status === 400) {
-        return serverMessage || "Please upload a valid text-based PDF resume.";
-    }
-
-    if (status === 404) {
-        return serverMessage || "Upload service route was not found. Please refresh and try again.";
-    }
-
-    if (status === 502 || status === 503 || status === 504) {
-        return serverMessage || "The analysis server is waking up or busy. Please wait a moment and try again.";
-    }
-
-    if (status >= 500) {
-        return serverMessage || "AI analysis failed. Please try again in a few minutes.";
-    }
-
-    return serverMessage || "Analysis failed. Please try again.";
+    return "Analysis failed. Please try again.";
 };
 
 function UploadResume() {
@@ -163,7 +189,7 @@ function UploadResume() {
         setError("");
 
         try {
-            const response = await api.post("/resume/upload", formData, {
+            const response = await postWithWakeRetry("/resume/upload", formData, {
                 timeout: REQUEST_TIMEOUTS.upload,
                 headers: {
                     Authorization: `Bearer ${token}`
@@ -175,16 +201,9 @@ function UploadResume() {
             navigate(`/result/${resumeId}`);
 
         } catch (error) {
-            if (import.meta.env.DEV) {
-                console.error("Resume upload failed:", {
-                    message: error.message,
-                    code: error.code,
-                    status: error.response?.status,
-                    data: error.response?.data
-                });
-            }
+            logSafeApiError("Resume upload", error);
 
-            setError(getUploadErrorMessage(error));
+            setError(await getUploadErrorMessage(error));
         } finally {
             setLoading(false);
         }

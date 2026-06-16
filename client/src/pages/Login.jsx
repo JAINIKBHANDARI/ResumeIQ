@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { getAuthErrorMessage, pingServerHealth, postWithWakeRetry, REQUEST_TIMEOUTS } from "../api/axios";
+import {
+    getAuthErrorMessage,
+    logSafeApiError,
+    pingServerHealth,
+    postWithWakeRetry,
+    REQUEST_TIMEOUTS
+} from "../api/axios";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import { useAuth } from "../context/useAuth";
 
@@ -46,6 +52,7 @@ function Login() {
 
             navigate("/dashboard");
         } catch (error) {
+            logSafeApiError("Login", error);
             setError(await getAuthErrorMessage(error, "Login failed. Please try again."));
         } finally {
             setLoading(false);

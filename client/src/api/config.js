@@ -9,15 +9,38 @@ const isLocalApiUrl = (url) => (
 export const getApiBaseUrl = () => {
     const fallbackUrl = import.meta.env.PROD ? PRODUCTION_API_URL : LOCAL_API_URL;
     const configuredUrl = (import.meta.env.VITE_API_URL || fallbackUrl).trim();
-    const normalizedUrl = configuredUrl.replace(/\/+$/, "");
+    let normalizedUrl = configuredUrl
+        .replace(/\/+$/, "")
+        .replace(/\/api\/api$/i, "/api");
+
+    if (import.meta.env.PROD && isLocalApiUrl(normalizedUrl)) {
+        normalizedUrl = PRODUCTION_API_URL;
+    }
+
+    const apiUrl = normalizedUrl.endsWith("/api")
+        ? normalizedUrl
+        : `${normalizedUrl}/api`;
 
     if (
         import.meta.env.PROD
-        && normalizedUrl.startsWith("http://")
-        && !isLocalApiUrl(normalizedUrl)
+        && apiUrl.startsWith("http://")
+        && !isLocalApiUrl(apiUrl)
     ) {
-        return normalizedUrl.replace("http://", "https://");
+        return apiUrl.replace("http://", "https://");
     }
 
-    return normalizedUrl;
+    return apiUrl;
+};
+
+export const getConfiguredApiUrl = () => import.meta.env.VITE_API_URL || "";
+
+export const getFinalApiUrl = (baseURL, url = "") => {
+    if (/^https?:\/\//i.test(url)) {
+        return url;
+    }
+
+    const normalizedBaseUrl = (baseURL || getApiBaseUrl()).replace(/\/+$/, "");
+    const normalizedPath = String(url).replace(/^\/+/, "");
+
+    return `${normalizedBaseUrl}/${normalizedPath}`;
 };
