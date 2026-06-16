@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "../api/config";
+
 const AUTH_STORAGE_KEYS = [
     "token",
     "user",
@@ -156,9 +158,7 @@ export const clearAuthStorage = () => {
 
 export const logoutUser = async (navigate) => {
     try {
-        const apiUrl = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
-
-        await fetch(`${apiUrl}/auth/logout`, {
+        await fetch(`${getApiBaseUrl()}/auth/logout`, {
             method: "POST",
             credentials: "include"
         });

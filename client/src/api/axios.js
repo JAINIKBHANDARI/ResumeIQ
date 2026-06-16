@@ -1,33 +1,13 @@
 import axios from "axios";
+import { getApiBaseUrl } from "./config";
 import { clearAuthStorage } from "../utils/auth";
 
-const LOCAL_API_URL = "http://localhost:5000/api";
 const HEALTH_PING_COOLDOWN_MS = 60000;
 
 export const REQUEST_TIMEOUTS = {
     auth: 60000,
     upload: 180000,
     health: 60000
-};
-
-const isLocalApiUrl = (url) => (
-    url.startsWith("http://localhost")
-    || url.startsWith("http://127.0.0.1")
-);
-
-const getApiBaseUrl = () => {
-    const configuredUrl = (import.meta.env.VITE_API_URL || LOCAL_API_URL).trim();
-    const normalizedUrl = configuredUrl.replace(/\/+$/, "");
-
-    if (
-        import.meta.env.PROD
-        && normalizedUrl.startsWith("http://")
-        && !isLocalApiUrl(normalizedUrl)
-    ) {
-        return normalizedUrl.replace("http://", "https://");
-    }
-
-    return normalizedUrl;
 };
 
 const api = axios.create({

@@ -10,15 +10,17 @@ const app = express();
 connectDB();
 
 const allowedOrigins = [
-    process.env.CLIENT_URL,
+    ...(process.env.CLIENT_URL || "").split(","),
     "https://resumeiq-review.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173"
-].filter(Boolean);
+].map((origin) => origin.trim()).filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
     origin: (origin, callback) => {
-        if (!origin || allowedOrigins.includes(origin)) {
+        const isAllowedVercelPreview = origin?.endsWith(".vercel.app");
+
+        if (!origin || allowedOrigins.includes(origin) || isAllowedVercelPreview) {
             return callback(null, true);
         }
 
@@ -27,7 +29,9 @@ app.use(cors({
     credentials: true,
     methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"]
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 app.get("/", (req, res) => {
@@ -46,6 +50,12 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/resume", require("./routes/resumeRoutes"));
+
+app.use((req, res) => {
+    res.status(404).json({
+        message: "Route not found"
+    });
+});
 
 app.use((error, req, res, next) => {
     if (error instanceof multer.MulterError && error.code === "LIMIT_FILE_SIZE") {

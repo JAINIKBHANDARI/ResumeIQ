@@ -50,7 +50,7 @@ const getUploadErrorMessage = (error) => {
             return "Backend API URL is not configured for production. Please check the deployed frontend API setting.";
         }
 
-        return "Network error. Please check your connection and try again. If the backend is waking up, wait a moment before retrying.";
+        return "Unable to reach the server. Please check your connection and try again.";
     }
 
     const status = error.response.status;
@@ -62,6 +62,10 @@ const getUploadErrorMessage = (error) => {
 
     if (status === 400) {
         return serverMessage || "Please upload a valid text-based PDF resume.";
+    }
+
+    if (status === 404) {
+        return serverMessage || "Upload service route was not found. Please refresh and try again.";
     }
 
     if (status === 502 || status === 503 || status === 504) {
