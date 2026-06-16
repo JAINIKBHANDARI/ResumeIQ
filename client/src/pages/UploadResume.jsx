@@ -25,6 +25,8 @@ const ROLE_OPTIONS = [
 
 const MAX_RESUME_SIZE_BYTES = 5 * 1024 * 1024;
 const JOB_DESCRIPTION_LIMIT = 8000;
+const DRIVE_UPLOAD_HELP_MESSAGE = "Upload failed. If you selected the PDF from Google Drive, please download it to your phone first and upload it from Files, Downloads, or Documents.";
+const MOBILE_UPLOAD_HELP_NOTE = "For best results on mobile, download your resume PDF to your phone first and upload it from Files, Downloads, or Documents. Uploading directly from Google Drive may fail on some phones.";
 
 const isPdfFile = (selectedFile) => {
     if (!selectedFile) return false;
@@ -85,7 +87,7 @@ const getUploadErrorMessage = async (error, selectedFile) => {
             : await pingServerHealth({ force: true });
 
         if (isHealthy && isMobileDriveLikePdf(selectedFile)) {
-            return "Upload failed. If you selected the PDF from Google Drive, please download it to your phone first and upload it from Downloads/Documents, or try again after the file is fully available offline.";
+            return DRIVE_UPLOAD_HELP_MESSAGE;
         }
 
         return isHealthy
@@ -109,12 +111,10 @@ const getUploadErrorMessage = async (error, selectedFile) => {
             : await pingServerHealth({ force: true });
 
         if (isHealthy && isMobileDriveLikePdf(selectedFile)) {
-            return "Upload failed. If you selected the PDF from Google Drive, please download it to your phone first and upload it from Downloads/Documents, or try again after the file is fully available offline.";
+            return DRIVE_UPLOAD_HELP_MESSAGE;
         }
 
-        return isHealthy
-            ? "Server is reachable, but the request failed. Please try again."
-            : "Unable to reach the server. Please check your connection and try again.";
+        return DRIVE_UPLOAD_HELP_MESSAGE;
     }
 
     return "Analysis failed. Please try again.";
@@ -255,6 +255,10 @@ function UploadResume() {
                         accept=".pdf"
                         onChange={handleFileChange}
                     />
+
+                    <p className="helper-text">
+                        {MOBILE_UPLOAD_HELP_NOTE}
+                    </p>
 
                     {file && (
                         <div className="file-preview">
