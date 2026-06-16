@@ -25,9 +25,10 @@ const fileFilter = (req, file, cb) => {
     const allowedMimeTypes = [
         "application/pdf",
         "application/x-pdf",
-        "application/octet-stream"
+        "application/octet-stream",
+        ""
     ];
-    const hasPdfMimeType = allowedMimeTypes.includes(file.mimetype);
+    const hasPdfMimeType = allowedMimeTypes.includes(file.mimetype || "");
 
     if (hasPdfExtension && hasPdfMimeType) {
         return cb(null, true);

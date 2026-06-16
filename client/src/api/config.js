@@ -7,7 +7,11 @@ const isLocalApiUrl = (url) => (
 );
 
 export const getApiBaseUrl = () => {
-    const fallbackUrl = import.meta.env.PROD ? PRODUCTION_API_URL : LOCAL_API_URL;
+    if (import.meta.env.PROD) {
+        return PRODUCTION_API_URL;
+    }
+
+    const fallbackUrl = LOCAL_API_URL;
     const configuredUrl = (import.meta.env.VITE_API_URL || fallbackUrl).trim();
     let normalizedUrl = configuredUrl
         .replace(/\/+$/, "")
@@ -41,6 +45,10 @@ export const getFinalApiUrl = (baseURL, url = "") => {
 
     const normalizedBaseUrl = (baseURL || getApiBaseUrl()).replace(/\/+$/, "");
     const normalizedPath = String(url).replace(/^\/+/, "");
+
+    if (!normalizedBaseUrl) {
+        return `/${normalizedPath}`;
+    }
 
     return `${normalizedBaseUrl}/${normalizedPath}`;
 };
