@@ -38,6 +38,9 @@ const uploadResume = async (req, res) => {
         }
 
         logUploadStage("received", {
+            origin: req.headers.origin,
+            contentType: req.headers["content-type"],
+            userAuthenticated: Boolean(req.user),
             userId: req.user?._id?.toString(),
             filename: req.file.originalname,
             size: req.file.size,

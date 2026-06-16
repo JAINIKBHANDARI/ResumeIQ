@@ -30,6 +30,11 @@ const fileFilter = (req, file, cb) => {
     ];
     const hasPdfMimeType = allowedMimeTypes.includes(file.mimetype || "");
 
+    console.info("[resume-upload] file-filter", {
+        originalname: file.originalname,
+        mimetype: file.mimetype || ""
+    });
+
     if (hasPdfExtension && hasPdfMimeType) {
         return cb(null, true);
     }

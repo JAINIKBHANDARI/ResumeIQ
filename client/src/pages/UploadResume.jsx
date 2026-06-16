@@ -41,7 +41,13 @@ const isPdfFile = (selectedFile) => {
     return hasPdfExtension && hasPdfType;
 };
 
-const getUploadErrorMessage = async (error) => {
+const isMobileDriveLikePdf = (selectedFile) => {
+    if (!selectedFile?.name?.toLowerCase().endsWith(".pdf")) return false;
+
+    return selectedFile.type === "" || selectedFile.type === "application/octet-stream";
+};
+
+const getUploadErrorMessage = async (error, selectedFile) => {
     if (error.response) {
         const status = error.response.status;
         const serverMessage = error.response.data?.message;
@@ -78,6 +84,10 @@ const getUploadErrorMessage = async (error) => {
             ? error.__serverHealthy
             : await pingServerHealth({ force: true });
 
+        if (isHealthy && isMobileDriveLikePdf(selectedFile)) {
+            return "Upload failed. If you selected the PDF from Google Drive, please download it to your phone first and upload it from Downloads/Documents, or try again after the file is fully available offline.";
+        }
+
         return isHealthy
             ? "Server is reachable, but analysis timed out. Please try again."
             : "Analysis is taking longer than expected. Please wait and try again.";
@@ -97,6 +107,10 @@ const getUploadErrorMessage = async (error) => {
         const isHealthy = error.__healthChecked
             ? error.__serverHealthy
             : await pingServerHealth({ force: true });
+
+        if (isHealthy && isMobileDriveLikePdf(selectedFile)) {
+            return "Upload failed. If you selected the PDF from Google Drive, please download it to your phone first and upload it from Downloads/Documents, or try again after the file is fully available offline.";
+        }
 
         return isHealthy
             ? "Server is reachable, but the request failed. Please try again."
@@ -213,7 +227,7 @@ function UploadResume() {
         } catch (error) {
             logSafeApiError("Resume upload", error);
 
-            setError(await getUploadErrorMessage(error));
+            setError(await getUploadErrorMessage(error, file));
         } finally {
             setLoading(false);
         }

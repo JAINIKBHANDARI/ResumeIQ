@@ -11,7 +11,16 @@ const {
     deleteResumeById
 } = require("../controllers/resumeController");
 
-router.post("/upload", upload.single("resume"), protect, uploadResume);
+const logUploadRequest = (req, res, next) => {
+    console.info("[resume-upload] request-reached-backend", {
+        origin: req.headers.origin,
+        contentType: req.headers["content-type"]
+    });
+
+    next();
+};
+
+router.post("/upload", logUploadRequest, upload.single("resume"), protect, uploadResume);
 
 router.get("/history", protect, getResumeHistory);
 
